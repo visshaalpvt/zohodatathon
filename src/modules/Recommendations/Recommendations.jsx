@@ -1,0 +1,1 @@
+export default function Recommendations() { return (<div className="page-content" style={{height:'calc(100vh - var(--topbar-height))', padding:24}}><div className="page-header"><h1>Recommendations</h1><p>Restored standalone module</p></div></div>) }

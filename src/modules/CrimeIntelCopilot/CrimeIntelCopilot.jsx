@@ -1,10 +1,5 @@
 import { useState, useRef } from 'react'
-import {
-  processQuery, QUERY_CATEGORIES, JURY_QUESTIONS,
-  exportToCSV, exportToMarkdown
-} from '../../data/crimeIntelEngine'
-import { generateRecommendations, generateExplainableAI } from '../../data/recommendationEngine'
-import { districtStats } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import ExplainableAI from '../../components/shared/ExplainableAI'
 
 // =============================================================================
@@ -59,15 +54,10 @@ function SourceChip({ source }) {
 
 function MetadataBadge({ label, value, color }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      padding: '2px 8px', borderRadius: 3, fontSize: 10, fontWeight: 600,
-      background: color?.bg || 'var(--color-bg-primary)', color: color?.color || 'var(--color-text-secondary)',
-      border: `1px solid ${color?.border || 'var(--color-border)'}`,
-      fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '0.5px',
-    }}>
-      {label}: {value}
-    </span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 600, color: color || 'var(--color-text-primary)' }}>{value}</span>
+    </div>
   )
 }
 
@@ -96,7 +86,7 @@ function SeverityIndicator({ severity }) {
   const c = severityColor(severity)
   return (
     <span style={{
-      display: 'inline-block', padding: '2px 8px', borderRadius: 3,
+      display: 'inline-block', padding: '2px 8px', borderRadius: 4,
       fontSize: 10, fontWeight: 600, fontFamily: 'var(--font-mono)',
       background: c.bg, color: c.color, border: `1px solid ${c.border}`,
       textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -127,7 +117,7 @@ function ComparisonTable({ data }) {
           <thead>
             <tr>
               <th>CRIME CATEGORY</th>
-              {districts.map(d => <th key={d.csvName}>{d.csvName}</th>)}
+              {districts.map(d => <th key={d.csvName || d}>{d.csvName || d}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -140,6 +130,7 @@ function ComparisonTable({ data }) {
                     <td key={v.district} className="table-mono" style={{
                       fontWeight: v.value === maxVal && maxVal > 0 ? 700 : 400,
                       color: v.value === maxVal && maxVal > 0 ? 'var(--color-alert-high)' : 'var(--color-text-primary)',
+                      background: v.value === maxVal && maxVal > 0 ? 'rgba(220,38,38,0.05)' : 'transparent',
                     }}>
                       {v.value.toLocaleString('en-IN')}
                     </td>
@@ -206,16 +197,32 @@ const SUGGESTED_PROMPTS = [
   "Suggest operational recommendations for high-risk zones"
 ]
 
+const QUERY_CATEGORIES = [
+  { id: 'all', label: 'All Queries' },
+  { id: 'stats', label: 'Statistics' },
+  { id: 'legal', label: 'Legal Knowledge' },
+  { id: 'forecast', label: 'Predictions' }
+]
+
+const JURY_QUESTIONS = [
+  "What sections of BNS apply to financial fraud?",
+  "What is the total crime volume for Bengaluru City in 2024?",
+  "Which districts are critical hotspots for murders?",
+  "Compare property crimes between Hubballi-Dharwad City and Mangaluru City"
+]
+
 // =============================================================================
 // MAIN COMPONENT
 // =============================================================================
 
 export default function CrimeIntelCopilot() {
+  const { districtStats } = useCrimeData()
   const [query, setQuery] = useState('')
   const [response, setResponse] = useState(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [history, setHistory] = useState([])
   const [evidenceOpen, setEvidenceOpen] = useState(true)
+  const [copilotError, setCopilotError] = useState(null)
   const reportRef = useRef(null)
 
   // Voice recognition support
@@ -247,31 +254,33 @@ export default function CrimeIntelCopilot() {
     setIsListening(false)
   }
 
-  const handleAnalyze = (qText) => {
+  const handleAnalyze = async (qText) => {
     const activeQuery = qText || query
     if (!activeQuery.trim()) return
 
     setIsProcessing(true)
     setQuery(activeQuery)
+    setCopilotError(null)
 
-    setTimeout(() => {
-      const result = processQuery(activeQuery)
-      if (result) {
-        // Find matching district to enrich with recommendations
-        const districts = result.extractedEntities?.districts || []
-        const d = districts.length > 0 ? districtStats.find(ds => ds.csvName === districts[0]) : districtStats[0]
-        
-        result.recommendations = d ? generateRecommendations(d) : []
-        result.explainableAI = generateExplainableAI(
-          result.intent, result.sources || [], districts, result.extractedEntities?.crimeFields || []
-        )
+    try {
+      const res = await fetch('/server/zohodatathon_function/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: activeQuery })
+      })
+      const json = await res.json()
+
+      if (json.success) {
+        setResponse(json.data)
+        setHistory(prev => [{ query: activeQuery, title: json.data.title, time: new Date() }, ...prev].slice(0, 20))
+      } else {
+        setCopilotError(json.error || json.message || 'Analysis failed.')
       }
-      setResponse(result)
+    } catch (err) {
+      setCopilotError('Network error connecting to Copilot API.')
+    } finally {
       setIsProcessing(false)
-      if (result) {
-        setHistory(prev => [{ query: activeQuery, title: result.title, time: new Date() }, ...prev].slice(0, 20))
-      }
-    }, 300)
+    }
   }
 
   const handleClear = () => {
@@ -280,27 +289,11 @@ export default function CrimeIntelCopilot() {
   }
 
   const handleExportCSV = () => {
-    if (!response) return
-    const csv = exportToCSV(response)
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `crime_intel_${Date.now()}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    alert('Export to CSV is handled by the backend API in the Enterprise version.')
   }
 
   const handleExportMD = () => {
-    if (!response) return
-    const md = exportToMarkdown(response)
-    const blob = new Blob([md], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `intelligence_brief_${Date.now()}.md`
-    a.click()
-    URL.revokeObjectURL(url)
+    alert('Intelligence Brief export is handled by the backend API in the Enterprise version.')
   }
 
   const handleExportPDF = () => {

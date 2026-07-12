@@ -1,30 +1,17 @@
-import { useState } from 'react'
-import { anomalies as datasetAnomalies } from '../../data/dataLayer'
+import { useState, useMemo } from 'react'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-
-// Process raw dataset anomalies
-const anomalies = datasetAnomalies.map(a => ({
-  id: a.id,
-  severity: a.severity, // critical or warning
-  type: a.type, // Month-over-Month or Year-on-Year
-  description: a.description,
-  district: a.district || 'Karnataka State',
-  date: 'FY 2024/2025',
-  detected: '2026-06-20 08:30:00',
-  status: 'Under Review',
-  expected: a.reference,
-  observed: a.current,
-  zscore: a.zScore,
-  category: a.category,
-  refLabel: a.refLabel
-}))
 
 function severityBadge(s) {
   if (s === 'critical') return <Badge type="critical">Critical</Badge>
   if (s === 'warning') return <Badge type="warning">High</Badge>
-  return <Badge type="neutral">Medium</Badge>
+  return <Badge type="neutral">Notice</Badge>
 }
+
+// Function removed since it's duplicate
+
+
 
 function statusBadge(s) {
   if (s === 'Escalated') return <Badge type="critical">Escalated</Badge>
@@ -53,6 +40,25 @@ const RECOMMENDED_ACTIONS = [
 ]
 
 export default function AnomalyDetection() {
+  const { anomalies: datasetAnomalies } = useCrimeData()
+  const anomalies = useMemo(() => {
+    return (datasetAnomalies || []).map(a => ({
+      id: a.id,
+      severity: a.severity, // critical or warning
+      type: a.type, // Month-over-Month or Year-on-Year
+      description: a.description,
+      district: a.district || 'Karnataka State',
+      date: 'FY 2024/2025',
+      detected: '2026-06-20 08:30:00',
+      status: 'Under Review',
+      expected: a.reference,
+      observed: a.current,
+      zscore: a.zScore,
+      category: a.category,
+      refLabel: a.refLabel
+    }))
+  }, [datasetAnomalies])
+
   const [selectedId, setSelectedId] = useState(anomalies[0]?.id || null)
   const [dismissed, setDismissed] = useState([])
   const [assignee, setAssignee] = useState('')

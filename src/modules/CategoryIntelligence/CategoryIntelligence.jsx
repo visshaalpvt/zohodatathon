@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { allCategories, monthlyReview, districtStats } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 
 // Interactive Treemap coordinate generation
@@ -49,7 +49,8 @@ function computeTreemap(data, width, height) {
   return rects
 }
 
-function getDistrictStatsForCategory(catName) {
+function getDistrictStatsForCategory(catName, districtStats) {
+  if (!districtStats) return []
   const key = catName.toLowerCase().replace(/[^a-z0-9]/g, '')
   const keys = {
     murder: ['murder'],
@@ -60,13 +61,13 @@ function getDistrictStatsForCategory(catName) {
     burglaryDay: ['burglaryday', 'housebreakingday'],
     burglaryNight: ['burglarynight', 'housebreakingnight'],
     theft: ['theft'],
-    riots: ['riots', 'rioting'],
-    casesOfHurt: ['casesofhurt', 'hurt', 'grievoushurt'],
-    crueltyByHusband: ['crueltybyhusband', 'dowryharassment', 'husbandcruelty'],
-    dowryDeaths: ['dowrydeaths'],
-    fatalAccidents: ['fatalaccidents', 'roadaccidents', 'motorvehicle'],
+    riots: ['riots'],
+    casesOfHurt: ['casesofhurt', 'hurt'],
+    crueltyByHusband: ['crueltybyhusband', 'cruelty'],
+    dowryDeaths: ['dowrydeaths', 'dowry'],
+    fatalAccidents: ['fatalaccidents'],
     nonFatalAccidents: ['nonfatalaccidents'],
-    molestation: ['molestation', 'outragingmodesty'],
+    molestation: ['molestation'],
     scst: ['scst', 'atrocity'],
     gambling: ['gambling', 'gamingact'],
     dpAct: ['dpact', 'dowryprohibition'],
@@ -90,16 +91,17 @@ function getDistrictStatsForCategory(catName) {
 }
 
 export default function CategoryIntelligence() {
+  const { allCategories = [], monthlyReview = [], districtStats = [] } = useCrimeData()
   const [selectedType, setSelectedType] = useState('ALL') // ALL, IPC, SLL
-  const [selectedCat, setSelectedCat] = useState(allCategories[0])
+  const [selectedCat, setSelectedCat] = useState(() => (allCategories && allCategories.length > 0 ? allCategories[0] : null))
 
-  const filteredCats = allCategories.filter(c => selectedType === 'ALL' || c.type === selectedType)
+  const filteredCats = (allCategories || []).filter(c => selectedType === 'ALL' || c.type === selectedType)
   const treemapWidth = 720
   const treemapHeight = 400
   const treemapData = computeTreemap(filteredCats.slice(0, 16), treemapWidth, treemapHeight)
 
   // Fastest growing categories YoY based on monthly review dataset
-  const fastestGrowing = monthlyReview
+  const fastestGrowing = (monthlyReview || [])
     .filter(m => m.prevYrMonth > 0 && m.curMonth > 0)
     .map(m => {
       const growth = ((m.curMonth - m.prevYrMonth) / m.prevYrMonth) * 100
@@ -108,7 +110,7 @@ export default function CategoryIntelligence() {
     .sort((a, b) => b.growth - a.growth)
     .slice(0, 6)
 
-  const districtData = selectedCat ? getDistrictStatsForCategory(selectedCat.name) : []
+  const districtData = selectedCat ? getDistrictStatsForCategory(selectedCat.name, districtStats) : []
 
   return (
     <div className="page-content">

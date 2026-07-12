@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { districtStats, forecasts, kpis } from '../../data/dataLayer'
+import { useState, useMemo } from 'react'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -13,9 +13,10 @@ const REPORT_TYPES = [
   { id: 'custom', label: 'Custom Report Builder', description: 'Select metrics, districts, and date range' },
 ]
 
-function MonthlySummaryPreview() {
-  const topDistricts = districtStats.slice(0, 10).map((d, i) => {
-    const fore = forecasts.find(f => f.district === d.csvName)
+function MonthlySummaryPreview({ districtStats, forecasts }) {
+  const { kpis = { total2024: 0, growthRateTotal: 0 } } = useCrimeData()
+  const topDistricts = (districtStats || []).slice(0, 10).map((d, i) => {
+    const fore = (forecasts || []).find(f => f.district === d.csvName)
     return {
       rank: i + 1,
       district: d.csvName,
@@ -109,10 +110,13 @@ function MonthlySummaryPreview() {
 }
 
 export default function Reports() {
+  const { districtStats, forecasts } = useCrimeData()
   const [activeReport, setActiveReport] = useState('monthly')
   const [scheduleValue, setScheduleValue] = useState('monthly')
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [toast, setToast] = useState(null)
 
-  const districtNames = districtStats.map(d => d.csvName)
+  const districtNames = (districtStats || []).map(d => d.csvName).sort()
 
   return (
     <div className="page-content">
@@ -186,7 +190,7 @@ export default function Reports() {
           </div>
           <div className="card-body">
             {activeReport === 'monthly' ? (
-              <MonthlySummaryPreview />
+              <MonthlySummaryPreview districtStats={districtStats} forecasts={forecasts} />
             ) : (
               <div style={{ padding: '32px 24px', textAlign: 'center' }}>
                 <div style={{ fontSize: 14, color: '#5F6B7A', fontWeight: 500, marginBottom: 6 }}>

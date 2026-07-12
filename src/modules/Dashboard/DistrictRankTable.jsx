@@ -1,5 +1,5 @@
 import Badge from '../../components/shared/Badge'
-import { hotspots, forecasts } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 
 function getRiskBadge(score) {
   if (score >= 75) return <Badge type="critical">Critical</Badge>
@@ -9,14 +9,16 @@ function getRiskBadge(score) {
 }
 
 export default function DistrictRankTable({ data }) {
+  const { hotspots, forecasts } = useCrimeData()
+
   const rows = data.map((row, i) => {
     const name = row.district ?? row.csvName ?? ''
     const count = row.count ?? row.total ?? 0
     const rank = row.rank ?? (i + 1)
 
-    // Lookup extra metrics from dataLayer if not present
-    const hot = hotspots.find(h => h.csvName === name)
-    const fore = forecasts.find(f => f.district === name)
+    // Lookup extra metrics from backend if not present
+    const hot = hotspots?.find(h => h.csvName === name)
+    const fore = forecasts?.find(f => f.district === name)
 
     const change = row.change ?? fore?.growthRate ?? 0
     const riskScore = row.riskScore ?? hot?.hotspotScore ?? 50

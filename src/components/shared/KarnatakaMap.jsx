@@ -2,7 +2,7 @@ import { useRef, useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as d3 from 'd3'
 import karnatakaGeoJSON from '../../data/karnatakaGeoJSON'
-import { geoStats, forecasts, district2025Data } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 
 const OVERLAYS = [
   { id: 'riskScore', label: 'Risk Map', metric: 'riskScore', color: '#D97706' },
@@ -22,8 +22,7 @@ const CATEGORY_LABELS = {
   cyberCrime: 'Cyber Crime', pocso: 'POCSO', pocsoRape: 'POCSO Rape'
 }
 
-function getTopCrimeCategory(districtName) {
-  const stats = geoStats[districtName]
+function getTopCrimeCategory(stats) {
   if (!stats) return 'N/A'
   let maxVal = -1
   let maxCat = 'N/A'
@@ -72,22 +71,25 @@ export default function KarnatakaMap({
   height: propHeight,
 }) {
   const navigate = useNavigate()
+  const { districtStats, forecasts } = useCrimeData()
   const [activeOverlay, setActiveOverlay] = useState('riskScore')
+
+  // Create geoStats locally
+  const geoStats = useMemo(() => {
+    const map = {}
+    districtStats.forEach(d => {
+      map[d.geoName] = d
+    })
+    return map
+  }, [districtStats])
 
   const profiles = useMemo(() => {
     const rawProfs = Object.keys(geoStats).map(geoName => {
       const stats = geoStats[geoName]
-      const fore = forecasts.find(f => f.geoName === geoName)
+      const fore = forecasts.find(f => f.district === stats.csvName || f.geoName === geoName)
       
       let total = stats.total
-      if (year === 2025 && district2025Data) {
-        const nk = geoName.toLowerCase().replace(/[^a-z]/g,'').substring(0, 10)
-        const d25 = district2025Data.districts.find(d => 
-          d.name.toLowerCase().replace(/[^a-z]/g,'').substring(0, 10) === nk
-        )
-        if (d25) total = d25.total
-      }
-
+      
       // Aggregate women safety metrics
       const womenSafety = (stats.rape || 0) + (stats.molestation || 0) + (stats.crueltyByHusband || 0) + (stats.dowryDeaths || 0) + (stats.pocso || 0) + (stats.pocsoRape || 0)
       
@@ -105,7 +107,7 @@ export default function KarnatakaMap({
       ...p,
       crimeRate: maxVal > 0 ? +(p.crimeCount / maxVal * 100).toFixed(1) : 0
     }))
-  }, [year])
+  }, [year, geoStats, forecasts])
 
   const containerRef = useRef(null)
   const svgRef = useRef(null)
@@ -164,7 +166,7 @@ export default function KarnatakaMap({
         const prof = profiles.find(p => p.district === d.properties.district)
         d3.select(this).attr('stroke', '#2563EB').attr('stroke-width', 2)
         const [mx, my] = d3.pointer(event, svgRef.current)
-        const topCat = getTopCrimeCategory(d.properties.district)
+        const topCat = getTopCrimeCategory(geoStats[d.properties.district])
         setTooltip({ x: mx, y: my, district: d.properties.district, prof, topCat })
         onDistrictHover && onDistrictHover(d.properties.district, prof)
       })

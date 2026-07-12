@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { geoStats, forecasts } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis } from 'recharts'
 import Badge from '../../components/shared/Badge'
 
@@ -37,16 +37,18 @@ function getRiskBadge(score) {
   return <Badge type="success">Low</Badge>
 }
 
-export default function DistrictDrawer({ district, prof, onClose }) {
+export default function DistrictDrawer({ districtName, onClose }) {
   const navigate = useNavigate()
-  if (!prof) return null
-
-  const dStats = geoStats[district] || {}
-  const fore = forecasts.find(f => f.geoName === district) || {}
+  const { geoStats, forecasts } = useCrimeData()
+  
+  if (!districtName || !geoStats) return null
+  const stats = geoStats[districtName]
+  if (!stats) return null
+  const fore = forecasts.find(f => f.geoName === districtName) || {}
 
   const cats = CATEGORIES.map(c => ({
     cat: c.label,
-    count: dStats[c.key] || 0,
+    count: stats[c.key] || 0,
   })).sort((a, b) => b.count - a.count)
 
   const trendData = MONTHS.map((m, i) => ({

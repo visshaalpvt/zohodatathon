@@ -1,31 +1,35 @@
-import { useState } from 'react'
-import { forecasts as datasetForecasts, monthlyReview } from '../../data/dataLayer'
+import { useState, useMemo } from 'react'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import KarnatakaMap from '../../components/shared/KarnatakaMap'
 import Sparkline from '../../components/shared/Sparkline'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Badge from '../../components/shared/Badge'
 
-// Emerging categories from monthly review YoY monthly spike
-const emergingCategories = monthlyReview
-  .filter(m => m.prevYrMonth > 0 && m.curMonth > 0)
-  .map(m => {
-    const growth = ((m.curMonth - m.prevYrMonth) / m.prevYrMonth) * 100
-    return { category: m.name, growth: parseFloat(growth.toFixed(1)) }
-  })
-  .sort((a, b) => b.growth - a.growth)
-  .slice(0, 6)
-
 const MODEL_FACTORS = [
   { label: 'Historical Trend Vector (YoY 2024-2025)', weight: 0.45 },
   { label: 'Seasonal Allocation (Monthly review f3dc65a9)', weight: 0.25 },
-  { label: 'Crime Intensity Severity Weights', weight: 0.30 },
+  { label: 'District Contagion Effect', weight: 0.15 },
+  { label: 'Category Shift Momentum', weight: 0.15 },
 ]
 
 export default function RiskForecasting() {
+  const { forecasts: datasetForecasts = [], monthlyReview = [] } = useCrimeData()
   const [selectedDistrict, setSelectedDistrict] = useState(null)
   const [openFactor, setOpenFactor] = useState(null)
 
-  const forecasts = datasetForecasts.map(f => {
+  // Emerging categories from monthly review YoY monthly spike
+  const emergingCategories = useMemo(() => {
+    return (monthlyReview || [])
+      .filter(m => m.prevYrMonth > 0 && m.curMonth > 0)
+      .map(m => {
+        const growth = ((m.curMonth - m.prevYrMonth) / m.prevYrMonth) * 100
+        return { category: m.name, growth: parseFloat(growth.toFixed(1)) }
+      })
+      .sort((a, b) => b.growth - a.growth)
+      .slice(0, 6)
+  }, [monthlyReview])
+
+  const forecasts = (datasetForecasts || []).map(f => {
     // Current risk is hotspot score, projected risk is adjusted slightly based on growth rate
     const currentRisk = Math.round(f.hotspotScore * 0.95)
     const predictedRisk = f.hotspotScore

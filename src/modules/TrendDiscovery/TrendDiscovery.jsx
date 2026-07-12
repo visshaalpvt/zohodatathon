@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { monthlyReview, districtStats, district2025Data, forecasts } from '../../data/dataLayer'
+import { useState, useMemo } from 'react'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
@@ -8,16 +8,19 @@ import Badge from '../../components/shared/Badge'
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const SEASONAL_WEIGHTS = [0.078, 0.070, 0.082, 0.088, 0.095, 0.092, 0.088, 0.085, 0.082, 0.080, 0.075, 0.085]
 
-// Map monthly review categories for Tab 0
-const topReviewCats = monthlyReview.slice(0, 8).map(m => ({
-  name: m.name,
-  'Prev Year Same Month': m.prevYrMonth,
-  'Previous Month': m.prevMonth,
-  'Current Month': m.curMonth,
-}))
-
 export default function TrendDiscovery() {
+  const { monthlyReview, districtStats, district2025Data, forecasts } = useCrimeData()
   const [activeTab, setActiveTab] = useState(0)
+
+  // Map monthly review categories for Tab 0
+  const topReviewCats = useMemo(() => {
+    return (monthlyReview || []).slice(0, 8).map(m => ({
+      name: m.name,
+      'Prev Year Same Month': m.prevYrMonth,
+      'Previous Month': m.prevMonth,
+      'Current Month': m.curMonth,
+    }))
+  }, [monthlyReview])
 
   const tabs = ['Category Evolution', 'Seasonal Patterns', 'District Comparison', 'YoY Change Table']
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { hotspots as datasetHotspots, forecasts } from '../../data/dataLayer'
+import { useCrimeData } from '../../context/CrimeDataContext'
 import KarnatakaMap from '../../components/shared/KarnatakaMap'
 import Sparkline from '../../components/shared/Sparkline'
 import Badge from '../../components/shared/Badge'
@@ -8,11 +8,12 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const SEASONAL_WEIGHTS = [0.078, 0.070, 0.082, 0.088, 0.095, 0.092, 0.088, 0.085, 0.082, 0.080, 0.075, 0.085]
 
 export default function Hotspots() {
+  const { hotspots: datasetHotspots = [], forecasts = [] } = useCrimeData()
   const [selected, setSelected] = useState(null)
 
   // Map to uniform structures
-  const hotspots = datasetHotspots.map(h => {
-    const fore = forecasts.find(f => f.district === h.csvName)
+  const hotspots = (datasetHotspots || []).map(h => {
+    const fore = (forecasts || []).find(f => f.district === h.csvName)
     const yoyChange = fore ? fore.growthRate : 0.0
     
     // Simulate seasonal monthly breakdown based on district total crime volume

@@ -1,0 +1,13 @@
+{
+	"name": "zohodatathon_function",
+	"version": "1.0.0",
+	"main": "index.js",
+	"author": "visshaalgcp@gmail.com",
+	"dependencies": {
+		"cors": "^2.8.6",
+		"dotenv": "^17.4.2",
+		"express": "^5.2.1",
+		"multer": "^1.4.5-lts.2",
+		"zcatalyst-sdk-node": "latest"
+	}
+}
