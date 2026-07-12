@@ -139,34 +139,67 @@ async function searchAll(req, q) {
 }
 
 async function getCurrentUser(req) {
-  let userDetails = {
-    userId: "usr-948194",
-    email: "ips-hq.ksp@karnataka.gov.in",
-    name: "Alok Kumar",
-    role: "Director General of Police",
-    district: "State HQ, Bengaluru",
-    permissions: [
-      "ACCESS_COMMAND_CENTER",
-      "COMPILE_STATE_BRIEFINGS",
-      "MODIFY_OFFICER_REGISTRY",
-      "RUN_TACTICAL_SIMULATIONS",
-      "VIEW_SENSITIVE_HOTSPOTS"
-    ]
-  };
-
   try {
     const app = catalyst.initialize(req);
-    const user = await app.auth().getCurrentUser();
-    if (user && user.email) {
-      userDetails.email = user.email;
-      userDetails.name = `${user.lastName || ''} ${user.firstName || ''}`.trim() || user.email;
-      userDetails.userId = user.userId;
+    const user = await app.userManagement().getCurrentUser();
+    
+    if (!user || !user.email) {
+      throw new Error("No active authenticated session.");
     }
-  } catch (err) {
-    // Normal fallback when running locally without a browser session
-  }
 
-  return userDetails;
+    const email = user.email;
+    const zcql = app.zcql();
+    const query = `SELECT * FROM Officers WHERE email = '${email}'`;
+    
+    const result = await zcql.executeZCQLQuery(query);
+    const officersTable = result.length > 0 ? result[0].Officers : null;
+
+    let officerProfile;
+    
+    if (!officersTable) {
+      // First login - auto create officer profile
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || email;
+      const table = app.datastore().table("Officers");
+      
+      officerProfile = await table.insertRow({
+        name: fullName,
+        email: email,
+        role: "Officer", // Default role
+        status: "Active",
+        district: "Unassigned",
+        permissions: ["VIEW_DASHBOARD"],
+        login_count: 1,
+        last_login: new Date().toISOString()
+      });
+    } else {
+      // Subsequent login - update login stats
+      officerProfile = officersTable;
+      const table = app.datastore().table("Officers");
+      
+      await table.updateRow({
+        ROWID: officerProfile.ROWID,
+        login_count: (Number(officerProfile.login_count) || 0) + 1,
+        last_login: new Date().toISOString()
+      });
+    }
+
+    // Merge Catalyst Authentication properties with Officers profile
+    return {
+      userId: user.userId,
+      email: officerProfile.email || email,
+      name: officerProfile.name,
+      role: officerProfile.role || "Officer",
+      status: user.status, // e.g. "Unverified", "Active"
+      district: officerProfile.district || "Unassigned",
+      permissions: officerProfile.permissions || [],
+      is_verified: user.status === "ACTIVE" // Catalyst auth status
+    };
+
+  } catch (err) {
+    console.warn("[System Service] Auth sync failed:", err.message);
+    // Return null so the frontend handles it as logged out
+    return null;
+  }
 }
 
 module.exports = {

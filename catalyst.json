@@ -1,26 +1,10 @@
 {
-  "slate": [
-    {
-      "name": "Crimevision-Ai",
-      "source": ".",
-      "headers": [
-        {
-          "source": "**/*.html",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache, no-store, must-revalidate"
-            }
-          ]
-        }
-      ]
-    }
-  ],
   "functions": {
     "targets": [
       "zohodatathon_function"
     ],
     "ignore": [],
     "source": "functions"
-  }
+  },
+  "slate": []
 }

@@ -3,14 +3,14 @@ const { processQuery } = require("../data/crimeIntelEngine");
 const { districtStats } = require("../data/dataLayer");
 const { generateRecommendations, generateExplainableAI } = require("../data/recommendationEngine");
 
-const ANALYTICS_KEYWORDS = /count|stats?|total|trend|forecast|hotspot|compare|rank|highest|lowest|percent|growth|charts?|top/i;
+const ANALYTICS_KEYWORDS = /count|stats?|total|trend|forecast|hotspot|compare|rank|highest|lowest|percent|growth|charts?/i;
 const LEGAL_KEYWORDS = /law|legal|court|act\b|ipc|bns|bnss|crpc|procedure|arrest|warrant|bail|section|bailable|complaint|police manual|chapter/i;
 const PROCEDURE_KEYWORDS = /procedure|process|arrest|bail|warrant|complaint|manual|fir|charge\s*sheet|investigation/i;
 
 function classifyEnterpriseIntent(queryText) {
   const q = queryText.toLowerCase().trim();
   const isAnalytics = ANALYTICS_KEYWORDS.test(q);
-  const isLegal = LEGAL_KEYWORDS.test(q) || PROCEDURE_KEYWORDS.test(q);
+  const isLegal = LEGAL_KEYWORDS.test(q);
 
   if (isAnalytics && isLegal) {
     return "MIXED";
@@ -96,7 +96,7 @@ async function getQuickMLAccessToken() {
   }
 }
 
-async function queryQuickMLRAG(queryText, intent = "UNKNOWN", documentIds = null) {
+async function queryQuickMLRAG(queryText, documentIds = null) {
   const endpoint = process.env.QUICKML_ENDPOINT_URL || "https://api.catalyst.zoho.in/quickml/v1/project/50276000000016025/rag/answer";
   const orgHeader = "60074947232";
 
@@ -113,8 +113,14 @@ async function queryQuickMLRAG(queryText, intent = "UNKNOWN", documentIds = null
     body.documents = documentIds;
   }
 
-  const startTime = Date.now();
-  
+  console.log(`[QuickML Request] URL: ${endpoint}`);
+  console.log(`[QuickML Request] Headers:`, {
+    "Authorization": "Zoho-oauthtoken <MASKED>",
+    "CATALYST-ORG": orgHeader,
+    "Content-Type": "application/json"
+  });
+  console.log(`[QuickML Request] Body:`, JSON.stringify(body));
+
   try {
     const res = await fetch(endpoint, {
       method: "POST",
@@ -122,27 +128,21 @@ async function queryQuickMLRAG(queryText, intent = "UNKNOWN", documentIds = null
       body: JSON.stringify(body)
     });
 
-    const latency = Date.now() - startTime;
-    
+    console.log(`[QuickML Status] HTTP Status: ${res.status} ${res.statusText}`);
+
     if (!res.ok) {
       const errorBody = await res.text();
       const errorMsg = `QuickML RAG query failed with status ${res.status} ${res.statusText}. details: ${errorBody}`;
-      console.error(`[Copilot Router Log] Intent: ${intent} | QuickML: YES | Analytics: NO | Status: FAILED | Latency: ${latency}ms | Reason: ${res.status} ${res.statusText}`);
-      const err = new Error(errorMsg);
-      err.isQuickMLError = true; // Flag for upstream handling
-      throw err;
+      console.error(`[QuickML Error] ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     const data = await res.json();
-    const responseLength = JSON.stringify(data).length;
-    console.log(`[Copilot Router Log] Intent: ${intent} | QuickML: YES | Analytics: ${intent === 'MIXED' ? 'YES' : 'NO'} | Status: SUCCESS | Latency: ${latency}ms | Response Length: ${responseLength} bytes`);
-    
+    console.log(`[QuickML Status] API Status: ${data.status || "N/A"}`);
     return data;
   } catch (err) {
-    if (!err.isQuickMLError) {
-      const latency = Date.now() - startTime;
-      console.error(`[Copilot Router Log] Intent: ${intent} | QuickML: YES | Analytics: NO | Status: FAILED | Latency: ${latency}ms | Reason: Network/Parse Error - ${err.message}`);
-      err.isQuickMLError = true;
+    if (!err.message.includes("[QuickML Error]")) {
+      console.error(`[QuickML Error] Exception during QuickML request: ${err.message}`);
     }
     throw err;
   }
@@ -199,7 +199,7 @@ async function askCopilot(req, queryText) {
 
     const legalPromise = (async () => {
       try {
-        const ragResponse = await queryQuickMLRAG(queryText, intent);
+        const ragResponse = await queryQuickMLRAG(queryText);
         const retrievedNodes = ragResponse.retrieved_nodes || [];
         const retrievedDocuments = [...new Set(retrievedNodes.map(n => 
           n.node?.metadata?.file_name || 
@@ -223,7 +223,6 @@ async function askCopilot(req, queryText) {
         };
       } catch (err) {
         console.error("[Copilot] QuickML RAG call failed in MIXED intent parallel branch:", err.message);
-        err.isQuickMLError = true;
         throw err;
       }
     })();
@@ -235,7 +234,7 @@ async function askCopilot(req, queryText) {
   } else if (["LEGAL", "PROCEDURE"].includes(intent)) {
     // QuickML only
     try {
-      const ragResponse = await queryQuickMLRAG(queryText, intent);
+      const ragResponse = await queryQuickMLRAG(queryText);
       const retrievedNodes = ragResponse.retrieved_nodes || [];
       const retrievedDocuments = [...new Set(retrievedNodes.map(n => 
         n.node?.metadata?.file_name || 
@@ -259,7 +258,6 @@ async function askCopilot(req, queryText) {
       };
     } catch (err) {
       console.error("[Copilot] QuickML RAG call failed for LEGAL/PROCEDURE intent:", err.message);
-      err.isQuickMLError = true;
       throw err;
     }
 
@@ -293,7 +291,35 @@ async function askCopilot(req, queryText) {
       analyticsResult.explainableAI = xai;
     }
 
-    // Removed hidden QuickML RAG fallback to strictly enforce intent routing
+    if (!analyticsResult) {
+      try {
+        const ragResponse = await queryQuickMLRAG(queryText);
+        const retrievedNodes = ragResponse.retrieved_nodes || [];
+        const retrievedDocuments = [...new Set(retrievedNodes.map(n => 
+          n.node?.metadata?.file_name || 
+          n.node?.metadata?.fileName || 
+          n.node?.metadata?.name || 
+          n.node?.metadata?.document_name
+        ).filter(Boolean))];
+
+        const sources = retrievedNodes.map(n => {
+          const file = n.node?.metadata?.file_name || n.node?.metadata?.fileName || n.node?.metadata?.name || "QuickML RAG Document";
+          const page = n.node?.metadata?.page_label || n.node?.metadata?.pageNumber || n.node?.metadata?.page || "";
+          return page ? `${file} (Page ${page})` : file;
+        }).filter(Boolean);
+
+        legalResult = {
+          answer: ragResponse.response || "",
+          sources: sources.length > 0 ? sources : ["QuickML RAG Engine"],
+          retrievedDocuments: retrievedDocuments,
+          confidence: 85,
+          recommendations: []
+        };
+      } catch (err) {
+        console.error("[Copilot] QuickML RAG call failed for GENERAL intent:", err.message);
+        throw err;
+      }
+    }
   }
 
   // 3. Merge Responses or Select Primary Answer

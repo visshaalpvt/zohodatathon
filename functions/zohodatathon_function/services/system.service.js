@@ -141,7 +141,7 @@ async function searchAll(req, q) {
 async function getCurrentUser(req) {
   try {
     const app = catalyst.initialize(req);
-    const user = await app.auth().getCurrentUser();
+    const user = await app.userManagement().getCurrentUser();
     
     if (!user || !user.email) {
       throw new Error("No active authenticated session.");

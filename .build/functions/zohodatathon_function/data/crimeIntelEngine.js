@@ -905,18 +905,7 @@ function generateGeneral(query, districts, crimeFields) {
 // =============================================================================
 
 function processQuery(query) {
-  if (!districtStats || districtStats.length === 0) {
-    return {
-      title: "System Not Initialized",
-      intent: "GENERAL",
-      summary: "No crime datasets have been uploaded yet. Please upload the baseline datasets through the admin dashboard before running analytics queries.",
-      confidence: 100,
-      extractedEntities: { districts: [], crimeFields: [], year: null },
-      sources: []
-    };
-  }
-  
-  if (!query || typeof query !== 'string') return null
+  if (!query?.trim()) return null
 
   const intent = classifyIntent(query)
   const districts = extractDistricts(query)

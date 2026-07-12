@@ -10,12 +10,6 @@ async function handleCopilot(req, res) {
     const result = await askCopilot(req, queryText);
     return sendSuccess(res, result);
   } catch (err) {
-    if (err.isQuickMLError) {
-      return res.status(503).json({
-        success: false,
-        message: "Legal knowledge service unavailable."
-      });
-    }
     return sendError(res, err.message);
   }
 }

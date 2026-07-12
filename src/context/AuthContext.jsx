@@ -33,21 +33,16 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     console.log('[AuthContext] APP START - AUTH CHECK')
-    // Check if the user is authenticated natively via SDK before polling the backend
     if (window.catalyst && window.catalyst.auth) {
-      window.catalyst.auth.isUserAuthenticated().then(isAuthenticated => {
-        if (isAuthenticated) {
-          console.log('[AuthContext] Catalyst SDK: User is authenticated. Fetching session...')
+      window.catalyst.auth.isUserAuthenticated()
+        .then(userResponse => {
+          console.log('[AuthContext] Catalyst SDK: Active session verified natively.');
           fetchSession()
-        } else {
-          console.log('[AuthContext] Catalyst SDK: User is NOT authenticated.')
-          setUser(null)
-          setLoading(false)
-        }
-      }).catch(err => {
-        console.error("[AuthContext] Catalyst auth check error", err)
-        fetchSession() // fallback check
-      })
+        })
+        .catch(err => {
+          console.log('[AuthContext] Catalyst SDK: No active native session detected. Falling back to backend.');
+          fetchSession() // fallback check to retrieve /me user status
+        })
     } else {
       console.log('[AuthContext] Catalyst SDK not ready, falling back to /me fetch')
       // If SDK not ready, fallback to server check

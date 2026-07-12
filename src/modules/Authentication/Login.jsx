@@ -42,9 +42,7 @@ export default function Login() {
       `;
 
       // Mount the official widget
-      window.catalyst.auth.signIn("catalyst-login-container", { css: customCss }).catch(err => {
-        console.error("Catalyst Widget Initialization Error:", err);
-      });
+      window.catalyst.auth.signIn("catalyst-login-container", { css: customCss });
     } else {
       console.error("Catalyst SDK not loaded");
     }
