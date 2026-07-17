@@ -33,21 +33,33 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     console.log('[AuthContext] APP START - AUTH CHECK')
+    
+    // Safety timeout: force loading=false after 5 seconds to prevent permanent "Authenticating..." spinner
+    const timer = setTimeout(() => {
+      console.warn('[AuthContext] Safety timeout triggered. Forcing authentication loading state to false.');
+      setLoading(false);
+    }, 5000);
+
+    const onAuthChecked = () => {
+      clearTimeout(timer);
+    };
+
     if (window.catalyst && window.catalyst.auth) {
       window.catalyst.auth.isUserAuthenticated()
         .then(userResponse => {
           console.log('[AuthContext] Catalyst SDK: Active session verified natively.');
-          fetchSession()
+          fetchSession().then(onAuthChecked).catch(onAuthChecked);
         })
         .catch(err => {
           console.log('[AuthContext] Catalyst SDK: No active native session detected. Falling back to backend.');
-          fetchSession() // fallback check to retrieve /me user status
+          fetchSession().then(onAuthChecked).catch(onAuthChecked);
         })
     } else {
       console.log('[AuthContext] Catalyst SDK not ready, falling back to /me fetch')
-      // If SDK not ready, fallback to server check
-      fetchSession()
+      fetchSession().then(onAuthChecked).catch(onAuthChecked);
     }
+
+    return () => clearTimeout(timer);
   }, [])
 
   const logout = async () => {
