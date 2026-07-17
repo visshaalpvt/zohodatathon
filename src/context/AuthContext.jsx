@@ -22,6 +22,15 @@ export function AuthProvider({ children }) {
       } else {
         console.log('[AuthContext] SESSION NOT FOUND via /me')
         setUser(null)
+        // Clear native SDK session if desynchronized from backend to allow login widget to render
+        if (window.catalyst && window.catalyst.auth) {
+          window.catalyst.auth.isUserAuthenticated()
+            .then(() => {
+              console.warn('[AuthContext] Desync detected: Native SDK has session, but backend `/me` is empty. Signing out natively.');
+              window.catalyst.auth.signOut().catch(err => console.error('[AuthContext] Signout sync error:', err));
+            })
+            .catch(() => {});
+        }
       }
     } catch (err) {
       console.error('[AuthContext] Auth check failed:', err)
