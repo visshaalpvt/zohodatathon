@@ -128,7 +128,7 @@ export default function CriminalNetworks() {
                   </button>
                 </div>
                 <div style={{ fontSize: 11.5, color: '#5F6B7A' }}>
-                  Type: <Badge type={selectedNode.type === 'category' ? 'success' : 'neutral'}>{selectedNode.type.toUpperCase()}</Badge>
+                  Type: <Badge type={selectedNode.type === 'category' ? 'success' : 'neutral'}>{(selectedNode.type || 'unknown').toUpperCase()}</Badge>
                 </div>
                 {selectedNode.type === 'district' && (
                   <div style={{ marginTop: 4, fontSize: 11, color: '#5F6B7A' }}>
@@ -161,70 +161,70 @@ export default function CriminalNetworks() {
               <span className="card-meta">KSP SCRB Criminal Dossier</span>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#0F2744' }}>{selectedOffender.name}</span>
-                <Badge type={selectedOffender.status === 'Wanted' ? 'critical' : selectedOffender.status === 'In Custody' ? 'success' : 'warning'}>
-                  {selectedOffender.status.toUpperCase()}
-                </Badge>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#1B1F23', marginBottom: 16 }}>
-                <div>
-                  <strong style={{ color: '#5F6B7A' }}>Specialization:</strong> {selectedOffender ? selectedOffender.specialization : 'N/A'}
-                </div>
-                {selectedOffender && (
-                <>
-                  <div className="grid-2">
-                    <div className="card" style={{ padding: 12, background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: 4 }}>
-                      <div style={{ fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>LINKED CASES</div>
-                      <div style={{ fontSize: 18, fontWeight: 600, color: '#1B1F23' }}>{selectedOffender.linkedCases}</div>
-                    </div>
-                    <div className="card" style={{ padding: 12, background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: 4 }}>
-                      <div style={{ fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>STATUS</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: selectedOffender.status === 'Wanted' ? '#C62828' : '#1E7D32' }}>{selectedOffender.status}</div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="card-title" style={{ fontSize: 11, display: 'block', marginBottom: 4, color: '#5F6B7A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Operational Areas</span>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {selectedOffender.districts.map(d => (
-                        <Badge key={d} text={d} />
-                      ))}
-                    </div>
-                  </div>
-                </>
-                )}
-              </div>
-
-              {/* Dossier Timeline */}
               {selectedOffender ? (
-                <div>
-                  <span className="card-title" style={{ fontSize: 11, display: 'block', marginBottom: 8, color: '#5F6B7A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Case Incident Timeline
-                  </span>
-                  <div style={{ borderLeft: '1px solid #D2D6DC', paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                    {selectedOffender.timeline.map((item, idx) => (
-                      <div key={idx} style={{ position: 'relative' }}>
-                        {/* Bullet point anchor */}
-                        <span style={{
-                          position: 'absolute', left: -16.5, top: 3,
-                          width: 8, height: 8, borderRadius: '50%',
-                          background: '#0F2744', border: '2px solid #FFFFFF'
-                        }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>
-                          <span>{item.date}</span>
-                          <span>{item.caseNo}</span>
-                        </div>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#1B1F23', marginTop: 2 }}>{item.offense}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#5F6B7A', marginTop: 1 }}>
-                          <span>Loc: {item.district}</span>
-                          <span style={{ fontWeight: 500, color: item.status === 'Arrested' || item.status === 'Convicted' ? '#1E7D32' : '#E67E22' }}>{item.status}</span>
-                        </div>
-                      </div>
-                    ))}
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#0F2744' }}>{selectedOffender.name}</span>
+                    <Badge type={selectedOffender.status === 'Wanted' ? 'critical' : selectedOffender.status === 'In Custody' ? 'success' : 'warning'}>
+                      {(selectedOffender.status || '').toUpperCase()}
+                    </Badge>
                   </div>
-                </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12.5, color: '#1B1F23', marginBottom: 16 }}>
+                    <div>
+                      <strong style={{ color: '#5F6B7A' }}>Specialization:</strong> {selectedOffender.specialization || 'N/A'}
+                    </div>
+                    <div className="grid-2">
+                      <div className="card" style={{ padding: 12, background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: 4 }}>
+                        <div style={{ fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>LINKED CASES</div>
+                        <div style={{ fontSize: 18, fontWeight: 600, color: '#1B1F23' }}>{selectedOffender.linkedCases}</div>
+                      </div>
+                      <div className="card" style={{ padding: 12, background: 'var(--color-bg-primary)', border: '1px solid var(--color-border)', borderRadius: 4 }}>
+                        <div style={{ fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>STATUS</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: selectedOffender.status === 'Wanted' ? '#C62828' : '#1E7D32' }}>{selectedOffender.status}</div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="card-title" style={{ fontSize: 11, display: 'block', marginBottom: 4, color: '#5F6B7A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Operational Areas</span>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {selectedOffender.districts?.map(d => (
+                          <Badge key={d} text={d} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dossier Timeline */}
+                  {selectedOffender.timeline && (
+                    <div>
+                      <span className="card-title" style={{ fontSize: 11, display: 'block', marginBottom: 8, color: '#5F6B7A', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        Case Incident Timeline
+                      </span>
+                      <div style={{ borderLeft: '1px solid #D2D6DC', paddingLeft: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {selectedOffender.timeline.map((item, idx) => (
+                          <div key={idx} style={{ position: 'relative' }}>
+                            {/* Bullet point anchor */}
+                            <span style={{
+                              position: 'absolute', left: -16.5, top: 3,
+                              width: 8, height: 8, borderRadius: '50%',
+                              background: '#0F2744', border: '2px solid #FFFFFF'
+                            }} />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#8C96A3', fontFamily: 'IBM Plex Mono' }}>
+                              <span>{item.date}</span>
+                              <span>{item.caseNo}</span>
+                            </div>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#1B1F23', marginTop: 2 }}>{item.offense}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10.5, color: '#5F6B7A', marginTop: 1 }}>
+                              <span>Loc: {item.district}</span>
+                              <span style={{ fontWeight: 500, color: item.status === 'Arrested' || item.status === 'Convicted' ? '#1E7D32' : '#E67E22' }}>{item.status}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div style={{ padding: '20px 0', textAlign: 'center', color: '#8C96A3', fontSize: 12 }}>
                   Select an offender to view dossier

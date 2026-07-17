@@ -53,7 +53,8 @@ async function getAllReports(req) {
       return row;
     });
   } catch (err) {
-    throw new Error(`Failed to list reports from Data Store: ${err.message}`);
+    console.warn(`[Report Service] Failed to list reports from Data Store: ${err.message}. Returning empty fallback list.`);
+    return [];
   }
 }
 

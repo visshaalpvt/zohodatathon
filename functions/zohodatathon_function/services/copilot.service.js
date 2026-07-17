@@ -324,37 +324,56 @@ async function askCopilot(req, queryText) {
 
   // 3. Merge Responses or Select Primary Answer
   if (intent === "MIXED" && analyticsResult && legalResult) {
-    finalResult.answer = `### Statistical Analytics\n${analyticsResult.summary}\n\n### Legal & Procedural Directives\n${legalResult.answer}`;
+    finalResult.title = "Mixed Intelligence & Analytical Briefing";
+    finalResult.reportType = "COMBINED INTELLIGENCE";
+    finalResult.summary = `### Statistical Analytics\n${analyticsResult.summary}\n\n### Legal & Procedural Directives\n${legalResult.answer}`;
+    finalResult.findings = analyticsResult.findings || [];
     finalResult.confidence = Math.round((analyticsResult.confidence + legalResult.confidence) / 2);
     finalResult.sources = [...new Set([...(analyticsResult.sources || []), ...(legalResult.sources || [])])];
     finalResult.retrievedDocuments = legalResult.retrievedDocuments;
     finalResult.recommendations = [...(legalResult.recommendations || []), ...(analyticsResult.recommendations || [])].slice(0, 5);
-    finalResult.entities = analyticsResult.extractedEntities || { districts: [], crimeFields: [], year: null };
+    finalResult.extractedEntities = analyticsResult.extractedEntities || { districts: [], crimeFields: [], year: null };
+    finalResult.explainableAI = analyticsResult.explainableAI || null;
+    finalResult.comparisonData = analyticsResult.comparisonData || null;
+    finalResult.rankings = analyticsResult.rankings || null;
+    finalResult.rankField = analyticsResult.rankField || null;
   } else if (legalResult) {
-    finalResult.answer = legalResult.answer;
+    finalResult.title = `Legal Briefing: ${queryText.substring(0, 50)}${queryText.length > 50 ? '...' : ''}`;
+    finalResult.reportType = "LEGAL DIRECTIVE";
+    finalResult.summary = legalResult.answer;
+    finalResult.findings = [];
     finalResult.confidence = legalResult.confidence;
     finalResult.sources = legalResult.sources;
     finalResult.retrievedDocuments = legalResult.retrievedDocuments;
     finalResult.recommendations = legalResult.recommendations;
+    finalResult.extractedEntities = { districts: [], crimeFields: [], year: null };
   } else if (analyticsResult) {
-    finalResult.answer = analyticsResult.summary;
+    finalResult.title = analyticsResult.title || "Statistical Query Response";
+    finalResult.reportType = analyticsResult.reportType || "CRIME ANALYTICS";
+    finalResult.summary = analyticsResult.summary;
+    finalResult.findings = analyticsResult.findings || [];
     finalResult.confidence = analyticsResult.confidence;
     finalResult.sources = analyticsResult.sources;
     finalResult.recommendations = analyticsResult.recommendations || [];
-    finalResult.entities = analyticsResult.extractedEntities || { districts: [], crimeFields: [], year: null };
-    finalResult.analytics = {
-      comparisonData: analyticsResult.comparisonData || null,
-      rankings: analyticsResult.rankings || null,
-      rankField: analyticsResult.rankField || null,
-      explainableAI: analyticsResult.explainableAI || null
-    };
+    finalResult.extractedEntities = analyticsResult.extractedEntities || { districts: [], crimeFields: [], year: null };
+    finalResult.explainableAI = analyticsResult.explainableAI || null;
+    finalResult.comparisonData = analyticsResult.comparisonData || null;
+    finalResult.rankings = analyticsResult.rankings || null;
+    finalResult.rankField = analyticsResult.rankField || null;
   } else {
-    finalResult.answer = "I could not resolve an analytical or legal response for your query. Please rephrase your question.";
+    finalResult.title = "No Intelligence Resolved";
+    finalResult.reportType = "SYSTEM WARNING";
+    finalResult.summary = "I could not resolve an analytical or legal response for your query. Please rephrase your question.";
+    finalResult.findings = [];
     finalResult.confidence = 40;
+    finalResult.extractedEntities = { districts: [], crimeFields: [], year: null };
   }
 
+  // Derive confidenceLevel string from numeric confidence
+  finalResult.confidenceLevel = finalResult.confidence >= 80 ? "High" : finalResult.confidence >= 60 ? "Medium" : "Low";
+
   // Deduplicate and enrich entities, related districts, follow ups
-  const matchedDistricts = finalResult.entities?.districts || [];
+  const matchedDistricts = finalResult.extractedEntities?.districts || [];
   if (matchedDistricts.length > 0) {
     const d = districtStats.find(ds => ds.csvName === matchedDistricts[0]);
     if (d) {

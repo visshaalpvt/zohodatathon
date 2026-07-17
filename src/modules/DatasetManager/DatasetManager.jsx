@@ -327,7 +327,7 @@ export default function DatasetManager() {
           ) : datasets.length === 0 ? (
             <div className="card" style={{ padding: 48, textAlign: 'center' }}>
               <p style={{ color: 'var(--color-text-secondary)', marginBottom: 16 }}>No datasets uploaded yet in Catalyst cloud repository.</p>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 20 }}>All crime analytics currently sourcing from fallback local CSV files.</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 20 }}>Upload crime datasets to Catalyst File Store to enable analytics.</p>
               <button className="intel-btn btn-primary" onClick={() => setActiveTab('upload')}>
                 Upload your first dataset
               </button>

@@ -1,7 +1,7 @@
 'use strict';
 
-// Load environment variables from .env FIRST — before any module reads process.env
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+// Environment variables are injected by Catalyst at deploy time via catalyst-config.json env_variables.
+// For local development, set variables in your shell or use the Catalyst CLI.
 
 const express = require("express");
 const cors = require("cors");

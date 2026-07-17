@@ -75,6 +75,7 @@ export default function App() {
   const { user, loading: authLoading } = useAuth()
   const { loading: dataLoading, error: dataError } = useCrimeData()
 
+  // Auth Loading Gate:
   if (authLoading) {
     return (
       <div className="app-shell" style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -83,11 +84,12 @@ export default function App() {
     )
   }
 
+  // User Check Gate:
   if (!user) {
     return <Login />
   }
 
-  // Email Verification Gate
+  // Email Verification Gate:
   // Catalyst returns status 'Unverified' or 'verified' usually, or we can check user.status / is_verified from the DB
   const isUnverified = user.status && user.status.toLowerCase() === 'unverified'
   if (isUnverified) {
@@ -102,8 +104,8 @@ export default function App() {
           <p style={{ color: 'var(--color-text-secondary)', maxWidth: 300, margin: '0 auto 24px auto', fontSize: 14 }}>
             We've sent a verification link to your email address. Please click the link to activate your account.
           </p>
-          <button 
-            className="btn-secondary" 
+          <button
+            className="btn-secondary"
             onClick={() => window.location.reload()}
           >
             I have verified my email

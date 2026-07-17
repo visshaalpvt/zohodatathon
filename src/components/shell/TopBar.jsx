@@ -31,7 +31,9 @@ const TAB_NAMES = {
 
 export default function TopBar() {
   const location = useLocation()
+
   const { user, logout } = useAuth()
+
   const path = location.pathname
   const params = new URLSearchParams(location.search)
   const tab = params.get('tab')

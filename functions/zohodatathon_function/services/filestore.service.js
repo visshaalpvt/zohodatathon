@@ -36,9 +36,9 @@ function parseCSVText(raw) {
  * Returns normalized datasets in memory.
  */
 async function downloadAndNormalizeDatasets(req) {
-  const folderId = process.env.CATALYST_DATASETS_FOLDER_ID;
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
   if (!folderId) {
-    throw new Error("CATALYST_DATASETS_FOLDER_ID environment variable is not set.");
+    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is not set.");
   }
 
   const app = catalyst.initialize(req);
@@ -50,14 +50,11 @@ async function downloadAndNormalizeDatasets(req) {
   try {
     rows = await table.getAllRows();
   } catch(e) {
-    // If the table fetch fails entirely (e.g. table not found), we treat it as empty
+    throw new Error(`Catalyst Data Store query failed for Datasets table: ${e.message}`);
   }
 
   if (!rows || rows.length === 0) {
-    // FIRST RUN DEPLOYMENT FIX:
-    // Do not throw if the table is empty. Instead, return an empty normalized state
-    // so the application can start and allow the first upload.
-    return {};
+    throw new Error("No active datasets found in Catalyst Data Store. Please upload datasets via the Dataset Manager.");
   }
 
   // Filter active datasets and get the latest version for each type

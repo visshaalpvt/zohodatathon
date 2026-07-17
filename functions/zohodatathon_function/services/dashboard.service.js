@@ -10,12 +10,8 @@ async function getDashboard(req) {
     const table = datastore.table("Officers");
     officers = await table.getAllRows();
   } catch (err) {
-    // Fallback if table doesn't exist
-    officers = [
-      { ROWID: "1", name: "DGP Alok Kumar", role: "Director General", status: "Active", district: "State HQ" },
-      { ROWID: "2", name: "SP N. Shashi Kumar", role: "Superintendent of Police", status: "Active", district: "Bengaluru City" },
-      { ROWID: "3", name: "ASP Harish Pandey", role: "Assistant Superintendent", status: "Active", district: "Mysuru City" }
-    ];
+    console.warn("[Dashboard Service] Officers table query failed:", err.message);
+    officers = [];
   }
 
   // Active alerts from raw anomalies

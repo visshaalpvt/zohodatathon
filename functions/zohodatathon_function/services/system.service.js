@@ -102,7 +102,11 @@ async function getNotifications(req) {
       unreadCount: notifications.filter(n => String(n.unread) === "true" || n.unread === true).length
     };
   } catch (err) {
-    throw new Error(`Failed to fetch notifications from Data Store: ${err.message}`);
+    console.warn("[System Service] Could not fetch notifications from Data Store:", err.message);
+    return {
+      notifications: [],
+      unreadCount: 0
+    };
   }
 }
 
@@ -148,11 +152,17 @@ async function getCurrentUser(req) {
     }
 
     const email = user.email;
-    const zcql = app.zcql();
-    const query = `SELECT * FROM Officers WHERE email = '${email}'`;
     
-    const result = await zcql.executeZCQLQuery(query);
-    const officersTable = result.length > 0 ? result[0].Officers : null;
+    // Strict format validation
+    if (!email || typeof email !== 'string' || !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+      throw new Error("Invalid email format.");
+    }
+
+    // Use Data Store criteria query instead of raw ZCQL to prevent injection
+    const table = app.datastore().table("Officers");
+    const result = await table.getPagedRows({ where: [{ column: "email", comparator: "=", value: email }] });
+    const rows = result.data || [];
+    const officersTable = rows.length > 0 ? rows[0] : null;
 
     let officerProfile;
     

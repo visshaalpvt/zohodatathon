@@ -3,7 +3,13 @@
 		"name": "zohodatathon_function",
 		"stack": "node20",
 		"type": "advancedio",
-		"env_variables": {}
+		"env_variables": {
+			"QUICKML_CLIENT_ID": "1000.NI2LCR6J36XRPT7YN9X1JBVNAW0G4V",
+			"QUICKML_CLIENT_SECRET": "3bab4922179722ab8fb4e46800940ead47dd464210",
+			"QUICKML_REFRESH_TOKEN": "1000.da7c19f803d8cd7f91b5e184f3183d73.bfe1cac68058cdacb6d068f00bb19cdf",
+			"QUICKML_ENDPOINT_URL": "https://api.catalyst.zoho.in/quickml/v1/project/50276000000016025/rag/answer",
+			"DATASETS_FOLDER_ID": "50276000000016025"
+		}
 	},
 	"execution": {
 		"main": "index.js"

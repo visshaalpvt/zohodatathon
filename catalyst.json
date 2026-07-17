@@ -6,5 +6,10 @@
     "ignore": [],
     "source": "functions"
   },
-  "slate": []
+  "slate": [
+    {
+      "name": "Crimevision-Ai",
+      "source": "."
+    }
+  ]
 }

@@ -26,7 +26,8 @@ async function listDatasets(req) {
     const rows = await table.getAllRows();
     return rows;
   } catch (err) {
-    throw new Error(`Failed to list datasets from Data Store: ${err.message}`);
+    console.warn(`[Dataset Service] Failed to list datasets from Data Store: ${err.message}. Returning empty fallback list.`);
+    return [];
   }
 }
 
@@ -39,9 +40,10 @@ async function getDatasetById(req, id) {
     // Download first 20 rows from File Store for preview
     const fileId = row.file_id;
     let previewRows = [];
-    if (fileId && process.env.CATALYST_DATASETS_FOLDER_ID) {
+    const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
+    if (fileId && folderId) {
       try {
-        const folder = app.filestore().folder(process.env.CATALYST_DATASETS_FOLDER_ID);
+        const folder = app.filestore().folder(folderId);
         const buffer = await folder.downloadFile(Number(fileId));
         const csvContent = buffer.toString("utf8");
         const parsed = parseCSVText(csvContent);
@@ -64,9 +66,9 @@ async function uploadDataset(req, file, metadata) {
   if (!file) {
     throw new Error("CSV File is required for upload.");
   }
-  const folderId = process.env.CATALYST_DATASETS_FOLDER_ID;
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
   if (!folderId) {
-    throw new Error("CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
+    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
   }
 
   const csvContent = file.buffer.toString("utf8");
@@ -143,9 +145,9 @@ async function replaceDataset(req, id, file, metadata) {
   if (!file) {
     throw new Error("Replacement CSV File is required.");
   }
-  const folderId = process.env.CATALYST_DATASETS_FOLDER_ID;
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
   if (!folderId) {
-    throw new Error("CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
+    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
   }
   
   const app = catalyst.initialize(req);
@@ -219,7 +221,7 @@ async function replaceDataset(req, id, file, metadata) {
 
 async function deleteDataset(req, id) {
   const app = catalyst.initialize(req);
-  const folderId = process.env.CATALYST_DATASETS_FOLDER_ID;
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
   
   // 1. Fetch dataset details to get file_id
   let currentMetadata = null;

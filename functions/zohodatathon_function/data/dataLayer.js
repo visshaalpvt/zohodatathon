@@ -2,7 +2,6 @@
  * DATA LAYER — KSP SCRB Crime Intelligence Platform
  * =========================================================
  * PRIMARY SOURCE: Catalyst File Store (datasets folder)
- * FALLBACK:       Local CSV files in data/ directory
  *
  * Architecture:
  *   1. On first request, ensureInitialized(req) downloads CSVs
