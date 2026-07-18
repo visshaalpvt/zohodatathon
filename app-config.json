@@ -1,5 +1,5 @@
 {
-  "command": "npm install && npm run build",
+  "command": "",
   "build_path": "dist",
   "stack": "node20",
   "env_variables": {},
