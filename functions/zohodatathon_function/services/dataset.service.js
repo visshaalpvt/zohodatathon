@@ -40,7 +40,7 @@ async function getDatasetById(req, id) {
     // Download first 20 rows from File Store for preview
     const fileId = row.file_id;
     let previewRows = [];
-    const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
+    const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID || "50276000000035003";
     if (fileId && folderId) {
       try {
         const folder = app.filestore().folder(folderId);
@@ -215,7 +215,7 @@ async function replaceDataset(req, id, file, metadata) {
 
 async function deleteDataset(req, id) {
   const app = catalyst.initialize(req);
-  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID || "50276000000035003";
   
   // 1. Fetch dataset details to get file_id
   let currentMetadata = null;

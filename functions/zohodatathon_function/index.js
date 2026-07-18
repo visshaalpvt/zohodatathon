@@ -75,6 +75,7 @@ const generalLimiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: { success: false, error: "Too many requests. Please try again later." }
 });
 const copilotLimiter = rateLimit({
@@ -82,6 +83,7 @@ const copilotLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: { success: false, error: "Copilot rate limit exceeded. Please wait before sending more queries." }
 });
 app.use(generalLimiter);
@@ -147,13 +149,44 @@ async function requireAdminAuth(req, res, next) {
   }
 }
 
+function shouldBypassInitialization(req) {
+  // Strip Catalyst Advanced I/O route prefix if present (e.g. /server/zohodatathon_function)
+  const cleanPath = (p) => {
+    if (!p) return '';
+    return p.replace(/^\/server\/[a-zA-Z0-9_]+/, '');
+  };
+
+  const path = cleanPath(req.path);
+  const originalUrl = cleanPath(req.originalUrl);
+
+  // Direct bypasses
+  if (path === '/' || path === '/health' || path === '/me') return true;
+  if (originalUrl === '/' || originalUrl === '/health' || originalUrl === '/me') return true;
+
+  // Path prefix / pattern bypasses
+  const checkPath = (p) => {
+    if (p.startsWith('/officers') || 
+        p.startsWith('/workspace') || 
+        p.startsWith('/alerts') || 
+        p.startsWith('/notifications')) {
+      return true;
+    }
+    // Datasets routes: bypass all except '/datasets/compiled' and '/datasets/rebuild'
+    if (p.startsWith('/datasets')) {
+      if (p.includes('/compiled') || p.includes('/rebuild')) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  };
+
+  return checkPath(path) || checkPath(originalUrl);
+}
+
 // DataLayer lazy initialization middleware — forces File Store usage on first request
 app.use(async (req, res, next) => {
-  // Bypass initialization check for /health and root endpoint (BUG-013 / Task 4)
-  const isBypass = req.path.endsWith('/health') || 
-                   req.path.endsWith('/') || 
-                   req.originalUrl.endsWith('/health') || 
-                   req.originalUrl.endsWith('/');
+  const isBypass = shouldBypassInitialization(req);
   console.log('[DataLayer Middleware Debug] Path:', req.path, 'OriginalUrl:', req.originalUrl, 'isBypass:', isBypass);
   if (isBypass) {
     return next();
