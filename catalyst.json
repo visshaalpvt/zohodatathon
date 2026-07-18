@@ -9,7 +9,7 @@
   "slate": [
     {
       "name": "Crimevision-Ai",
-      "source": "."
+      "source": "dist"
     }
   ]
 }

@@ -1,0 +1,1 @@
+import{j as e}from"./index-CTgZUawe.js";function s(){return e.jsx("div",{className:"page-content",style:{height:"calc(100vh - var(--topbar-height))",padding:24},children:e.jsxs("div",{className:"page-header",children:[e.jsx("h1",{children:"Recommendations"}),e.jsx("p",{children:"Restored standalone module"})]})})}export{s as default};

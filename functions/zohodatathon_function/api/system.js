@@ -18,10 +18,10 @@ async function handleRoot(req, res) {
 async function handleHealth(req, res) {
   return res.json({
     success: true,
-    env: process.env,
+    status: "ok",
     reqPath: req.path,
     reqOriginalUrl: req.originalUrl,
-    headers: req.headers
+    timestamp: new Date().toISOString()
   });
 }
 
