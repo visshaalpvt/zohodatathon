@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 **/.env
+**/catalyst-config.json
 
 # Editor directories and files
 .vscode/*

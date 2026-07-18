@@ -1,0 +1,17 @@
+{
+	"deployment": {
+		"name": "zohodatathon_function",
+		"stack": "node20",
+		"type": "advancedio",
+		"env_variables": {
+			"QUICKML_CLIENT_ID": "",
+			"QUICKML_CLIENT_SECRET": "",
+			"QUICKML_REFRESH_TOKEN": "",
+			"QUICKML_ENDPOINT_URL": "",
+			"DATASETS_FOLDER_ID": ""
+		}
+	},
+	"execution": {
+		"main": "index.js"
+	}
+}

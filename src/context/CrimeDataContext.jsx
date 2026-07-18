@@ -55,9 +55,9 @@ export function CrimeDataProvider({ children }) {
     window.addEventListener('catalyst-mutation-event', handleMutation)
     window.addEventListener('datalayer-updated', handleMutation) // legacy event from Phase 1
 
-    // 2. Intelligent background polling every 30 seconds
+    // 2. Intelligent background polling every 30 seconds (only when tab is visible)
     const intervalId = setInterval(() => {
-      fetchData()
+      if (document.visibilityState === 'visible') fetchData();
     }, 30000)
 
     return () => {

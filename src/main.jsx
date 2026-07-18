@@ -8,16 +8,10 @@ import { CrimeDataProvider } from "./context/CrimeDataContext.jsx";
 
 import "./index.css";
 
-// Global fetch interceptor for Zoho Catalyst deployment
+// Global fetch interceptor — validates JSON responses from backend
 const originalFetch = window.fetch;
 window.fetch = async function (input, init) {
-  let url = input;
-  if (typeof input === 'string' && input.startsWith('/server/zohodatathon_function')) {
-    const host = window.location.hostname;
-    if (host !== 'localhost' && host !== '127.0.0.1') {
-      url = 'https://zohodatathon-60074947232.development.catalystserverless.in' + input;
-    }
-  }
+  const url = input;
   
   console.log(`[Global Fetch] Request: ${url}`);
   try {

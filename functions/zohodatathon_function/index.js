@@ -5,6 +5,8 @@
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 // Import controllers
 const { dashboard } = require("./api/dashboard");
@@ -43,12 +45,16 @@ const upload = multer({
 
 const app = express();
 
-// Configure CORS Options
+// ─── Security Headers (BUG-009) ───────────────────────────────────────────────
+// CSP disabled because the app loads Google Fonts and Catalyst SDK from external CDNs
+app.use(helmet({ contentSecurityPolicy: false }));
+
+// ─── CORS Configuration (BUG-004) ────────────────────────────────────────────
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requesting origin dynamically to support localhost and production frontend domains
-    callback(null, true);
-  },
+  origin: [
+    'https://zohodatathon-voasiiql.onslate.in',
+    'http://localhost:5173'
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",
@@ -60,11 +66,26 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 200
 };
-
-// Mount CORS middleware
 app.use(cors(corsOptions));
 
-// Request logging & Preflight middleware (OPTIONS handler)
+// ─── Rate Limiting (BUG-011) ─────────────────────────────────────────────────
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: "Too many requests. Please try again later." }
+});
+const copilotLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: "Copilot rate limit exceeded. Please wait before sending more queries." }
+});
+app.use(generalLimiter);
+
+// Request logging middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin || "No Origin";
   const safeHeaders = { ...req.headers };
@@ -75,20 +96,35 @@ app.use((req, res, next) => {
   }
   
   console.log(`[API Log] ${new Date().toISOString()} | ${req.method} ${req.originalUrl || req.url} | Origin: ${origin} | Headers: ${JSON.stringify(safeHeaders)}`);
-  
-  if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, CATALYST-ORG, Accept, Origin");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    return res.status(200).end();
-  }
   next();
 });
 
 app.use(express.json());
 
-// Admin authorization middleware using Catalyst User Auth (Option B)
+// ─── Authentication Middleware (BUG-005) ──────────────────────────────────────
+// requireAuth: Ensures the user has a valid Catalyst session (any role)
+async function requireAuth(req, res, next) {
+  try {
+    const user = await getCurrentUser(req);
+    if (!user || !user.email) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required. Please log in.",
+        timestamp: new Date().toISOString()
+      });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({
+      success: false,
+      error: "Authentication failed: " + err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+}
+
+// requireAdminAuth: Ensures the user has admin privileges (used on mutation routes)
 async function requireAdminAuth(req, res, next) {
   try {
     const user = await getCurrentUser(req);
@@ -132,45 +168,52 @@ app.use(async (req, res, next) => {
   }
 });
 
-// System and Health
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTES — Public (no auth required)
+// ═══════════════════════════════════════════════════════════════════════════════
 app.get("/", handleRoot);
 app.get("/health", handleHealth);
-app.get("/me", handleMe);
-app.get("/search", handleSearch);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTES — Authenticated (requireAuth)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Session / Identity
+app.get("/me", requireAuth, handleMe);
+app.get("/search", requireAuth, handleSearch);
 
 // Dashboard
-app.get("/dashboard", dashboard);
+app.get("/dashboard", requireAuth, dashboard);
 
-// Officers CRUD
-app.get("/officers", handleGetOfficers);
-app.get("/officers/:id", handleGetOfficerById);
-app.post("/officers", handleCreateOfficer);
-app.put("/officers/:id", handleUpdateOfficer);
-app.delete("/officers/:id", handleDeleteOfficer);
+// Officers CRUD (read = requireAuth, write = requireAdminAuth kept below)
+app.get("/officers", requireAuth, handleGetOfficers);
+app.get("/officers/:id", requireAuth, handleGetOfficerById);
+app.post("/officers", requireAdminAuth, handleCreateOfficer);
+app.put("/officers/:id", requireAdminAuth, handleUpdateOfficer);
+app.delete("/officers/:id", requireAdminAuth, handleDeleteOfficer);
 
 // District Intelligence
-app.get("/districts", handleGetDistricts);
-app.get("/districts/:name", handleGetDistrictByName);
+app.get("/districts", requireAuth, handleGetDistricts);
+app.get("/districts/:name", requireAuth, handleGetDistrictByName);
 
 // Crime Analytics & Categories
-app.get("/crime-analytics", handleGetCrimeAnalytics);
-app.get("/categories", handleGetCategories);
-app.get("/categories/ipc", handleGetIPCCategories);
-app.get("/categories/sll", handleGetSLLCategories);
+app.get("/crime-analytics", requireAuth, handleGetCrimeAnalytics);
+app.get("/categories", requireAuth, handleGetCategories);
+app.get("/categories/ipc", requireAuth, handleGetIPCCategories);
+app.get("/categories/sll", requireAuth, handleGetSLLCategories);
 
 // Analytics Modules
-app.get("/hotspots", handleGetHotspots);
-app.get("/forecast", handleGetForecasts);
-app.get("/anomalies", handleGetAnomalies);
-app.get("/recommendations", handleGetRecommendations);
-app.get("/trends", handleGetTrends);
-app.get("/sociological", handleGetSociological);
-app.get("/network", handleGetNetwork);
+app.get("/hotspots", requireAuth, handleGetHotspots);
+app.get("/forecast", requireAuth, handleGetForecasts);
+app.get("/anomalies", requireAuth, handleGetAnomalies);
+app.get("/recommendations", requireAuth, handleGetRecommendations);
+app.get("/trends", requireAuth, handleGetTrends);
+app.get("/sociological", requireAuth, handleGetSociological);
+app.get("/network", requireAuth, handleGetNetwork);
 
-// AI & Simulation
-app.post("/copilot", handleCopilot);
+// AI & Simulation (copilot gets stricter rate limit)
+app.post("/copilot", requireAuth, copilotLimiter, handleCopilot);
 // Defensive GET handler — surfaces a clear 405 instead of a generic 404
-// (debug log showed accidental GET /copilot requests during testing)
 app.get("/copilot", (req, res) => {
   res.status(405).json({
     success: false,
@@ -179,31 +222,33 @@ app.get("/copilot", (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-app.post("/simulation", handleSimulation);
-app.post("/agents", handleMultiAgent);
-
+app.post("/simulation", requireAuth, handleSimulation);
+app.post("/agents", requireAuth, handleMultiAgent);
 
 // Reports
-app.post("/reports/generate", handleGenerateReport);
-app.get("/reports", handleGetReports);
-app.get("/reports/:id", handleGetReportById);
-
+app.post("/reports/generate", requireAuth, handleGenerateReport);
+app.get("/reports", requireAuth, handleGetReports);
+app.get("/reports/:id", requireAuth, handleGetReportById);
 
 // Workspace CRUD
-app.get("/workspace", handleGetWorkspace);
-app.post("/workspace", handleSaveWorkspaceItem);
-app.put("/workspace/:id", handleUpdateWorkspaceItem);
-app.delete("/workspace/:id", handleDeleteWorkspaceItem);
+app.get("/workspace", requireAuth, handleGetWorkspace);
+app.post("/workspace", requireAuth, handleSaveWorkspaceItem);
+app.put("/workspace/:id", requireAuth, handleUpdateWorkspaceItem);
+app.delete("/workspace/:id", requireAuth, handleDeleteWorkspaceItem);
 
 // Alerts & Notifications
-app.get("/alerts", handleGetAlerts);
-app.post("/alerts", handleCreateAlert);
-app.get("/notifications", handleGetNotifications);
+app.get("/alerts", requireAuth, handleGetAlerts);
+app.post("/alerts", requireAuth, handleCreateAlert);
+app.get("/notifications", requireAuth, handleGetNotifications);
 
-// Dataset Management
-app.get("/datasets", handleListDatasets);
-app.get("/datasets/compiled", handleGetCompiledAnalytics);
-app.get("/datasets/:id", handleGetDatasetById);
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROUTES — Admin (requireAdminAuth for mutations)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Dataset Management (reads are auth-only, writes are admin-only)
+app.get("/datasets", requireAuth, handleListDatasets);
+app.get("/datasets/compiled", requireAuth, handleGetCompiledAnalytics);
+app.get("/datasets/:id", requireAuth, handleGetDatasetById);
 app.post("/datasets/upload", requireAdminAuth, upload.single("file"), handleUploadDataset);
 app.put("/datasets/:id", requireAdminAuth, upload.single("file"), handleReplaceDataset);
 app.delete("/datasets/:id", requireAdminAuth, handleDeleteDataset);
