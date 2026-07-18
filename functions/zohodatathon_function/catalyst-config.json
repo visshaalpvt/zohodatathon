@@ -3,10 +3,7 @@
 		"name": "zohodatathon_function",
 		"stack": "node20",
 		"type": "advancedio",
-		"env_variables": {
-			"CATALYST_DATASETS_FOLDER_ID": "50276000000035003",
-			"DATASETS_FOLDER_ID": "50276000000035003"
-		}
+		"env_variables": {}
 	},
 	"execution": {
 		"main": "index.js"
