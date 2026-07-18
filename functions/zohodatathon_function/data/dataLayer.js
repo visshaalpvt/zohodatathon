@@ -19,6 +19,7 @@
  */
 
 const path = require('path');
+const fs = require('fs');
 const filestoreService = require('../services/filestore.service');
 
 // =============================================================================
@@ -60,13 +61,28 @@ let initialized = false;
  */
 async function loadDatasetsFromFileStore(req) {
   console.log('[DataLayer] Loading datasets from Catalyst File Store...');
-  const datasets = await filestoreService.downloadAndNormalizeDatasets(req);
-  csvSources.districtStats = datasets.districtStats;
-  csvSources.sllCategories = datasets.sllCategories;
-  csvSources.ipcCategories = datasets.ipcCategories;
-  csvSources.monthlyReview = datasets.monthlyReview;
-  csvSources.district2025  = datasets.district2025;
-  console.log('[DataLayer] All datasets successfully loaded from File Store.');
+  try {
+    const datasets = await filestoreService.downloadAndNormalizeDatasets(req);
+    csvSources.districtStats = datasets.districtStats;
+    csvSources.sllCategories = datasets.sllCategories;
+    csvSources.ipcCategories = datasets.ipcCategories;
+    csvSources.monthlyReview = datasets.monthlyReview;
+    csvSources.district2025  = datasets.district2025;
+    console.log('[DataLayer] All datasets successfully loaded from File Store.');
+  } catch (err) {
+    console.warn('[DataLayer] Catalyst File Store loading failed. Falling back to local CSV files. Error:', err.message);
+    try {
+      csvSources.districtStats = fs.readFileSync(path.join(__dirname, '2a1e057f-3b0b-42e4-ae4b-6cdb49902d31.csv'), 'utf8');
+      csvSources.sllCategories = fs.readFileSync(path.join(__dirname, '5bb7a3f7-8fe1-4eff-94db-c0e905301ebe.csv'), 'utf8');
+      csvSources.ipcCategories = fs.readFileSync(path.join(__dirname, 'e8a7c66c-42d7-4436-936b-f55bfb157319.csv'), 'utf8');
+      csvSources.monthlyReview = fs.readFileSync(path.join(__dirname, 'f3dc65a9-63ae-49fd-82c4-873048e9fa7c.csv'), 'utf8');
+      csvSources.district2025  = fs.readFileSync(path.join(__dirname, 'ka-district-wise-2025.csv'), 'utf8');
+      console.log('[DataLayer] All datasets successfully loaded from local fallback CSV files.');
+    } catch (localErr) {
+      console.error('[DataLayer] Critical failure: Local CSV fallback files are also missing or unreadable:', localErr.message);
+      throw localErr;
+    }
+  }
 }
 
 // =============================================================================

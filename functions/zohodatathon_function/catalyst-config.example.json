@@ -8,7 +8,8 @@
 			"QUICKML_CLIENT_SECRET": "",
 			"QUICKML_REFRESH_TOKEN": "",
 			"QUICKML_ENDPOINT_URL": "",
-			"DATASETS_FOLDER_ID": ""
+			"DATASETS_FOLDER_ID": "",
+			"CATALYST_DATASETS_FOLDER_ID": ""
 		}
 	},
 	"execution": {

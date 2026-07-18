@@ -11,11 +11,21 @@ async function getHealth(req) {
     dbStatus = "Degraded (Table check skipped)";
   }
 
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
+  const qmlClientId = process.env.QUICKML_CLIENT_ID;
+  const qmlSecret = process.env.QUICKML_CLIENT_SECRET;
+  const qmlRefresh = process.env.QUICKML_REFRESH_TOKEN;
+
   return {
-    version: "1.2.0",
+    service: "healthy",
+    version: "1.3.0",
     deployment: "Zoho Catalyst Advanced I/O Function",
     uptime: process.uptime(),
     dbStatus,
+    dependencies: {
+      filestore: folderId ? "configured" : "missing",
+      quickml: (qmlClientId && qmlSecret && qmlRefresh) ? "configured" : "missing"
+    },
     serverTimestamp: new Date().toISOString(),
     catalystProject: {
       projectId: "50276000000016025",
