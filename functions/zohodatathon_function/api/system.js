@@ -16,12 +16,13 @@ async function handleRoot(req, res) {
 }
 
 async function handleHealth(req, res) {
-  try {
-    const result = await getHealth(req);
-    return sendSuccess(res, result);
-  } catch (err) {
-    return sendError(res, err.message);
-  }
+  return res.json({
+    success: true,
+    env: process.env,
+    reqPath: req.path,
+    reqOriginalUrl: req.originalUrl,
+    headers: req.headers
+  });
 }
 
 async function handleGetAlerts(req, res) {

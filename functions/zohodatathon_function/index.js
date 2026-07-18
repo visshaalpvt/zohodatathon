@@ -149,7 +149,12 @@ async function requireAdminAuth(req, res, next) {
 // DataLayer lazy initialization middleware — forces File Store usage on first request
 app.use(async (req, res, next) => {
   // Bypass initialization check for /health and root endpoint (BUG-013 / Task 4)
-  if (req.path === '/health' || req.path === '/' || req.originalUrl === '/health' || req.originalUrl === '/') {
+  const isBypass = req.path.endsWith('/health') || 
+                   req.path.endsWith('/') || 
+                   req.originalUrl.endsWith('/health') || 
+                   req.originalUrl.endsWith('/');
+  console.log('[DataLayer Middleware Debug] Path:', req.path, 'OriginalUrl:', req.originalUrl, 'isBypass:', isBypass);
+  if (isBypass) {
     return next();
   }
 

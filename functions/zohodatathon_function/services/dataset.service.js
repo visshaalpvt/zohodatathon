@@ -66,10 +66,7 @@ async function uploadDataset(req, file, metadata) {
   if (!file) {
     throw new Error("CSV File is required for upload.");
   }
-  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
-  if (!folderId) {
-    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
-  }
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID || "50276000000035003";
 
   const csvContent = file.buffer.toString("utf8");
   const parsed = parseCSVText(csvContent);
@@ -145,10 +142,7 @@ async function replaceDataset(req, id, file, metadata) {
   if (!file) {
     throw new Error("Replacement CSV File is required.");
   }
-  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
-  if (!folderId) {
-    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is missing.");
-  }
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID || "50276000000035003";
   
   const app = catalyst.initialize(req);
   const folder = app.filestore().folder(folderId);

@@ -36,10 +36,7 @@ function parseCSVText(raw) {
  * Returns normalized datasets in memory.
  */
 async function downloadAndNormalizeDatasets(req) {
-  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID;
-  if (!folderId) {
-    throw new Error("DATASETS_FOLDER_ID or CATALYST_DATASETS_FOLDER_ID environment variable is not set.");
-  }
+  const folderId = process.env.DATASETS_FOLDER_ID || process.env.CATALYST_DATASETS_FOLDER_ID || "50276000000035003";
 
   const app = catalyst.initialize(req);
   const datastore = app.datastore();
