@@ -76,6 +76,7 @@ const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
+  skip: (req) => ['/', '/health', '/me'].includes(req.path),
   message: { success: false, error: "Too many requests. Please try again later." }
 });
 const copilotLimiter = rateLimit({
