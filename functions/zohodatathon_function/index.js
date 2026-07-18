@@ -44,6 +44,7 @@ const upload = multer({
 });
 
 const app = express();
+app.set('trust proxy', true);
 
 // ─── Security Headers (BUG-009) ───────────────────────────────────────────────
 // CSP disabled because the app loads Google Fonts and Catalyst SDK from external CDNs
