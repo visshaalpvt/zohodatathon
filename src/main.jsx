@@ -42,7 +42,7 @@ window.fetch = async function (input, init) {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <BrowserRouter basename="/app">
+    <BrowserRouter>
       <AuthProvider>
         <CrimeDataProvider>
           <App />
