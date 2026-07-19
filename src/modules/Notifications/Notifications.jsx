@@ -7,7 +7,7 @@ export default function Notifications() {
   useEffect(() => {
     async function loadNotifs() {
       try {
-        const res = await fetch('/server/zohodatathon_function/notifications')
+        const res = await fetch(buildApiUrl('/notifications'))
         const json = await res.json()
         if (json.success) {
           setNotifications(json.data)

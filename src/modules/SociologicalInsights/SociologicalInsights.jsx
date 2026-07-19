@@ -12,7 +12,7 @@ export default function SociologicalInsights() {
   useEffect(() => {
     async function loadCorrelations() {
       try {
-        const res = await fetch('/server/zohodatathon_function/sociological')
+        const res = await fetch(buildApiUrl('/sociological'))
         const json = await res.json()
         if (json.success) {
           setCorrelations(json.data)

@@ -263,7 +263,7 @@ export default function CrimeIntelCopilot() {
     setCopilotError(null)
 
     try {
-      const res = await fetch('/server/zohodatathon_function/copilot', {
+      const res = await fetch(buildApiUrl('/copilot'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: activeQuery })

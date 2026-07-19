@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { buildApiUrl } from '../../api.js'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 
@@ -18,8 +19,8 @@ export default function Recommendations() {
       setLoading(true)
       try {
         const url = selectedDistrict === 'all' 
-          ? '/server/zohodatathon_function/recommendations'
-          : `/server/zohodatathon_function/recommendations?district=${encodeURIComponent(selectedDistrict)}`
+          ? buildApiUrl('/recommendations')
+          : buildApiUrl(`/recommendations?district=${encodeURIComponent(selectedDistrict)}`)
           
         const res = await fetch(url)
         const json = await res.json()

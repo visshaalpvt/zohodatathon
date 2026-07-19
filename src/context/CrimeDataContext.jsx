@@ -21,8 +21,8 @@ export function CrimeDataProvider({ children }) {
     setError(null)
     try {
       const [resCompiled, resDash] = await Promise.all([
-        fetch('/server/zohodatathon_function/datasets/compiled', { credentials: 'include' }),
-        fetch('/server/zohodatathon_function/dashboard', { credentials: 'include' })
+        fetch(buildApiUrl('/datasets/compiled'), { credentials: 'include' }),
+        fetch(buildApiUrl('/dashboard'), { credentials: 'include' })
       ])
       
       const jsonCompiled = await resCompiled.json()

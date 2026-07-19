@@ -5,13 +5,14 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CrimeDataProvider } from "./context/CrimeDataContext.jsx";
+import { resolveApiUrl } from "./api.js";
 
 import "./index.css";
 
 // Global fetch interceptor — validates JSON responses from backend
 const originalFetch = window.fetch;
 window.fetch = async function (input, init) {
-  const url = input;
+  const url = resolveApiUrl(input);
   
   console.log(`[Global Fetch] Request: ${url}`);
   try {

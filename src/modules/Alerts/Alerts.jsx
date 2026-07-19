@@ -9,7 +9,7 @@ export default function Alerts() {
   useEffect(() => {
     async function loadAlerts() {
       try {
-        const res = await fetch('/server/zohodatathon_function/alerts')
+        const res = await fetch(buildApiUrl('/alerts'))
         const json = await res.json()
         if (json.success) {
           // Normalize alerts

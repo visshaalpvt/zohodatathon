@@ -17,7 +17,7 @@ export default function CriminalNetworks() {
   useEffect(() => {
     async function loadNetwork() {
       try {
-        const res = await fetch('/server/zohodatathon_function/network')
+        const res = await fetch(buildApiUrl('/network'))
         const json = await res.json()
         if (json.success) {
           // Rename edges -> links for force-graph compat

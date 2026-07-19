@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { buildApiUrl } from '../../api.js'
 
 const DATASET_TYPES = [
   { id: 'district_stats_2024', label: 'District Crime Stats 2024 (Primary)', desc: '22 crime category columns, 37 districts' },
@@ -25,7 +26,7 @@ export default function DatasetManager() {
   const fetchDatasets = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/server/zohodatathon_function/datasets')
+      const res = await fetch(buildApiUrl('/datasets'))
       const data = await res.json()
       if (data.success) {
         setDatasets(data.data)
@@ -78,8 +79,8 @@ export default function DatasetManager() {
 
     try {
       const url = replaceId 
-        ? `/server/zohodatathon_function/datasets/${replaceId}` 
-        : '/server/zohodatathon_function/datasets/upload'
+        ? buildApiUrl(`/datasets/${replaceId}`) 
+        : buildApiUrl('/datasets/upload')
       const method = replaceId ? 'PUT' : 'POST'
 
       setUploadProgress(65)
@@ -117,7 +118,7 @@ export default function DatasetManager() {
     if (!confirm('Are you sure you want to delete this dataset? This will permanently delete the File Store object and metadata.')) return
 
     try {
-      const res = await fetch(`/server/zohodatathon_function/datasets/${id}`, {
+      const res = await fetch(buildApiUrl(`/datasets/${id}`), {
         method: 'DELETE'
       })
       const data = await res.json()
@@ -138,7 +139,7 @@ export default function DatasetManager() {
     setPreviewLoading(true)
     setPreviewData(null)
     try {
-      const res = await fetch(`/server/zohodatathon_function/datasets/${id}`)
+      const res = await fetch(buildApiUrl(`/datasets/${id}`))
       const data = await res.json()
       if (data.success) {
         setPreviewData(data.data)
@@ -156,7 +157,7 @@ export default function DatasetManager() {
   const handleRebuild = async () => {
     setLoading(true)
     try {
-      const res = await fetch('/server/zohodatathon_function/datasets/rebuild', {
+      const res = await fetch(buildApiUrl('/datasets/rebuild'), {
         method: 'POST'
       })
       const data = await res.json()

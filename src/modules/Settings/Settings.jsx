@@ -9,7 +9,7 @@ export default function Settings() {
   useEffect(() => {
     async function loadPrefs() {
       try {
-        const res = await fetch('/server/zohodatathon_function/workspace')
+        const res = await fetch(buildApiUrl('/workspace'))
         const json = await res.json()
         if (json.success) {
           const prefs = json.data.find(d => d.type === 'preference')
@@ -40,8 +40,8 @@ export default function Settings() {
       
       const method = docId ? 'PUT' : 'POST'
       const url = docId 
-        ? `/server/zohodatathon_function/workspace/${docId}`
-        : '/server/zohodatathon_function/workspace'
+        ? buildApiUrl(`/workspace/${docId}`)
+        : buildApiUrl('/workspace')
 
       const res = await fetch(url, {
         method,

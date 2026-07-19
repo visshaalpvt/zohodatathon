@@ -9,7 +9,7 @@ export default function SystemHealth() {
   useEffect(() => {
     async function loadHealth() {
       try {
-        const res = await fetch('/server/zohodatathon_function/health')
+        const res = await fetch(buildApiUrl('/health'))
         const json = await res.json()
         if (json.success) {
           setHealthData(json.data)
@@ -25,7 +25,7 @@ export default function SystemHealth() {
     setIsRebuilding(true)
     setRebuildStatus(null)
     try {
-      const res = await fetch('/server/zohodatathon_function/datasets/rebuild', { method: 'POST' })
+      const res = await fetch(buildApiUrl('/datasets/rebuild'), { method: 'POST' })
       const data = await res.json()
       if (data.success) {
         setRebuildStatus({ type: 'success', msg: 'Analytics cache successfully rebuilt and broadcasted to clients.' })

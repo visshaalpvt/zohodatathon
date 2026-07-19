@@ -9,7 +9,7 @@ export default function Workspace() {
 
   const fetchWorkspace = async () => {
     try {
-      const res = await fetch('/server/zohodatathon_function/workspace')
+      const res = await fetch(buildApiUrl('/workspace'))
       const json = await res.json()
       if (json.success) {
         setItems(json.data)
@@ -40,7 +40,7 @@ export default function Workspace() {
         title: 'Quick Note',
         content: newNote
       }
-      const res = await fetch('/server/zohodatathon_function/workspace', {
+      const res = await fetch(buildApiUrl('/workspace'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { buildApiUrl } from '../api.js'
 
 const AuthContext = createContext(null)
 
@@ -12,7 +13,7 @@ export function AuthProvider({ children }) {
   const fetchSession = async () => {
     console.log('[AuthContext] FETCH /me initiated')
     try {
-      const res = await fetch('/server/zohodatathon_function/me', {
+      const res = await fetch(buildApiUrl('/me'), {
         credentials: 'include'
       })
       const data = await res.json()

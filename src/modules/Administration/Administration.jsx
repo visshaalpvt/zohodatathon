@@ -134,13 +134,13 @@ function TestingTab() {
       try {
         let res
         if (tc.method === 'POST') {
-          res = await fetch(tc.target, {
+          res = await fetch(buildApiUrl(tc.target.replace('/server/zohodatathon_function', '')), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ query: 'Explain BNS Section 302 details and guidelines.' })
           })
         } else {
-          res = await fetch(tc.target)
+          res = await fetch(buildApiUrl(tc.target.replace('/server/zohodatathon_function', '')))
         }
 
         const json = await res.json()
