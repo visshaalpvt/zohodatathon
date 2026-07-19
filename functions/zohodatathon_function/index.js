@@ -58,13 +58,21 @@ const allowedOrigins = [
   'http://127.0.0.1:3000'
 ];
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) {
+    return true;
+  }
+
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  return /^https:\/\/(?:[a-z0-9-]+\.)*(?:onslate\.in|catalystappexecutor\.in)$/i.test(origin);
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin) || /^https:\/\/[a-z0-9-]+\.onslate\.in$/i.test(origin)) {
+    if (isAllowedOrigin(origin)) {
       return callback(null, true);
     }
 
