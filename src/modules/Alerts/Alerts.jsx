@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 import Badge from '../../components/shared/Badge'
 
 const DEMO_ALERTS = [
@@ -37,7 +37,7 @@ export default function Alerts() {
   useEffect(() => {
     async function loadAlerts() {
       try {
-        const res = await fetch(buildApiUrl('/alerts'))
+        const res = await fetchWithTimeout(buildApiUrl('/alerts'), {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[Alerts] /alerts returned 401; using demo alerts fallback.')

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 
@@ -28,7 +28,7 @@ export default function Recommendations() {
           ? buildApiUrl('/recommendations')
           : buildApiUrl(`/recommendations?district=${encodeURIComponent(selectedDistrict)}`)
           
-        const res = await fetch(url)
+        const res = await fetchWithTimeout(url, {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[Recommendations] /recommendations returned 401; using demo recommendations fallback.')

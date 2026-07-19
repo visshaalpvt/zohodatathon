@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 
 const DEMO_HEALTH_DATA = {
   dbStatus: 'Connected',
@@ -16,7 +16,7 @@ export default function SystemHealth() {
   useEffect(() => {
     async function loadHealth() {
       try {
-        const res = await fetch(buildApiUrl('/health'))
+        const res = await fetchWithTimeout(buildApiUrl('/health'), {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[SystemHealth] /health returned 401; using demo health fallback.')
@@ -35,7 +35,7 @@ export default function SystemHealth() {
     setIsRebuilding(true)
     setRebuildStatus(null)
     try {
-      const res = await fetch(buildApiUrl('/datasets/rebuild'), { method: 'POST' })
+      const res = await fetchWithTimeout(buildApiUrl('/datasets/rebuild'), { method: 'POST' }, 5000)
       const data = await res.json()
       if (data.success) {
         setRebuildStatus({ type: 'success', msg: 'Analytics cache successfully rebuilt and broadcasted to clients.' })

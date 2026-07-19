@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
-import { buildApiUrl } from '../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../api.js'
 
 const CrimeDataContext = createContext(null)
 
@@ -62,8 +62,8 @@ export function CrimeDataProvider({ children }) {
     setError(null)
     try {
       const [resCompiled, resDash] = await Promise.all([
-        fetch(buildApiUrl('/datasets/compiled'), { credentials: 'include' }),
-        fetch(buildApiUrl('/dashboard'), { credentials: 'include' })
+        fetchWithTimeout(buildApiUrl('/datasets/compiled'), { credentials: 'include' }, 5000),
+        fetchWithTimeout(buildApiUrl('/dashboard'), { credentials: 'include' }, 5000)
       ])
       
       const jsonCompiled = await resCompiled.json()

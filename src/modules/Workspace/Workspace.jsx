@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 import Badge from '../../components/shared/Badge'
 
 const DEMO_WORKSPACE_ITEMS = [
@@ -16,7 +16,7 @@ export default function Workspace() {
 
   const fetchWorkspace = async () => {
     try {
-      const res = await fetch(buildApiUrl('/workspace'))
+      const res = await fetchWithTimeout(buildApiUrl('/workspace'), {}, 5000)
       const json = await res.json()
       if (res.status === 401) {
         console.warn('[Workspace] /workspace returned 401; using demo workspace fallback.')
@@ -50,11 +50,11 @@ export default function Workspace() {
         title: 'Quick Note',
         content: newNote
       }
-      const res = await fetch(buildApiUrl('/workspace'), {
+      const res = await fetchWithTimeout(buildApiUrl('/workspace'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      })
+      }, 5000)
       const json = await res.json()
       if (json.success) {
         setNewNote('')

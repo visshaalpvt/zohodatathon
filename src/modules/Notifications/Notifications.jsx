@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState([])
@@ -8,7 +8,7 @@ export default function Notifications() {
   useEffect(() => {
     async function loadNotifs() {
       try {
-        const res = await fetch(buildApiUrl('/notifications'))
+        const res = await fetchWithTimeout(buildApiUrl('/notifications'), {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[Notifications] /notifications returned 401; using demo notifications fallback.')

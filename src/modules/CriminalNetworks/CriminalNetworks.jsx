@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 import ForceGraph2D from 'react-force-graph-2d'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'

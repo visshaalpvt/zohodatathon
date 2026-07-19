@@ -11,6 +11,17 @@ export function buildApiUrl(path = '') {
   return `${API_BASE_URL}${normalizedPath}`
 }
 
+export async function fetchWithTimeout(input, options = {}, timeoutMs = 5000) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(input, { ...options, signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 export function resolveApiUrl(input) {
   if (typeof input !== 'string') {
     return input

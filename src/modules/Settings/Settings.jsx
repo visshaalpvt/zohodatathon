@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 
 export default function Settings() {
   const [preferences, setPreferences] = useState({ theme: 'dark', notifications: true })
@@ -10,7 +10,7 @@ export default function Settings() {
   useEffect(() => {
     async function loadPrefs() {
       try {
-        const res = await fetch(buildApiUrl('/workspace'))
+        const res = await fetchWithTimeout(buildApiUrl('/workspace'), {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[Settings] /workspace returned 401; using demo preferences fallback.')

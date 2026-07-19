@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { Component, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import TopBar from './components/shell/TopBar'
 import LeftNav from './components/shell/LeftNav'
@@ -71,6 +71,39 @@ function ErrorFallback({ error }) {
   )
 }
 
+class AppErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error, info) {
+    console.error('[AppErrorBoundary] Module render failed:', error, info)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 24 }}>
+          <div style={{ color: 'var(--color-text-secondary)', fontSize: 13, marginBottom: 8 }}>This section is unavailable right now.</div>
+          <div style={{ padding: 20, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)', borderRadius: 8 }}>
+            <strong style={{ color: 'var(--color-text-primary)' }}>This section is unavailable.</strong>
+            <p style={{ color: 'var(--color-text-muted)', marginTop: 8, fontSize: 13 }}>
+              The selected module encountered an error. Please choose another item from the sidebar.
+            </p>
+          </div>
+        </div>
+      )
+    }
+
+    return this.props.children
+  }
+}
+
 export default function App() {
   const { user, loading: authLoading } = useAuth()
   const { loading: dataLoading, error: dataError } = useCrimeData()
@@ -126,8 +159,9 @@ export default function App() {
           ) : dataLoading ? (
             <LoadingFallback message="Initializing Enterprise Data Layer..." />
           ) : (
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
+            <AppErrorBoundary>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
                 {/* 10 Intelligence Modules */}
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/map" element={<CrimeMap />} />
@@ -170,6 +204,7 @@ export default function App() {
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </Suspense>
+          </AppErrorBoundary>
           )}
         </main>
       </div>

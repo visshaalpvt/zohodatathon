@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { buildApiUrl } from '../../api.js'
+import { buildApiUrl, fetchWithTimeout } from '../../api.js'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Badge from '../../components/shared/Badge'
@@ -19,7 +19,7 @@ export default function SociologicalInsights() {
   useEffect(() => {
     async function loadCorrelations() {
       try {
-        const res = await fetch(buildApiUrl('/sociological'))
+        const res = await fetchWithTimeout(buildApiUrl('/sociological'), {}, 5000)
         const json = await res.json()
         if (res.status === 401) {
           console.warn('[SociologicalInsights] /sociological returned 401; using demo correlations fallback.')
