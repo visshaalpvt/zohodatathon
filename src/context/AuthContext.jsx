@@ -2,11 +2,20 @@ import { createContext, useContext, useState, useEffect } from 'react'
 import { buildApiUrl } from '../api.js'
 
 const AuthContext = createContext(null)
+let authProviderRenderCount = 0
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  authProviderRenderCount += 1
+  console.log('[AuthContext] PROVIDER RENDER', {
+    renderCount: authProviderRenderCount,
+    user,
+    loading,
+    error,
+  })
 
   const clearError = () => setError(null)
 

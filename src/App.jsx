@@ -31,6 +31,8 @@ const DatasetManager = lazy(() => import('./modules/DatasetManager/DatasetManage
 const Settings = lazy(() => import('./modules/Settings/Settings'))
 const SystemHealth = lazy(() => import('./modules/SystemHealth/SystemHealth'))
 
+let appRenderCount = 0
+
 function LoadingFallback({ message = 'Loading module...' }) {
   return (
     <div style={{
@@ -108,6 +110,16 @@ export default function App() {
   const { user, loading: authLoading } = useAuth()
   const { loading: dataLoading, error: dataError, recoverableError } = useCrimeData()
   const isRecoverableDataError = recoverableError || (dataError && /authentication required|unauthorized|401/i.test(dataError))
+
+  appRenderCount += 1
+  console.log('[App] COMPONENT RENDER', {
+    renderCount: appRenderCount,
+    user,
+    authLoading,
+    dataLoading,
+    dataError,
+    recoverableError,
+  })
 
   // Auth Loading Gate:
   if (authLoading) {
