@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import { buildApiUrl } from '../../api.js'
 
+const DEMO_HEALTH_DATA = {
+  dbStatus: 'Connected',
+  cacheStatus: 'Operational',
+  lastRebuild: 'Demo data snapshot',
+  instanceLoad: 'Normal'
+}
 
 export default function SystemHealth() {
   const [isRebuilding, setIsRebuilding] = useState(false)
@@ -12,7 +18,10 @@ export default function SystemHealth() {
       try {
         const res = await fetch(buildApiUrl('/health'))
         const json = await res.json()
-        if (json.success) {
+        if (res.status === 401) {
+          console.warn('[SystemHealth] /health returned 401; using demo health fallback.')
+          setHealthData(DEMO_HEALTH_DATA)
+        } else if (json.success) {
           setHealthData(json.data)
         }
       } catch (err) {

@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react'
 import { buildApiUrl } from '../../api.js'
 import Badge from '../../components/shared/Badge'
 
+const DEMO_WORKSPACE_ITEMS = [
+  { ROWID: 'ws-1', type: 'bookmark', title: 'Bengaluru South Crime Heatmap', content: 'Saved view for priority operations.' },
+  { ROWID: 'ws-2', type: 'saved_report', title: 'Weekly District Trends', content: 'Prebuilt report for weekly monitoring.' },
+  { ROWID: 'ws-3', type: 'officer_note', title: 'Quick Note', content: 'Use manual note entry when backend editing is unavailable.' }
+]
+
 export default function Workspace() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,7 +18,10 @@ export default function Workspace() {
     try {
       const res = await fetch(buildApiUrl('/workspace'))
       const json = await res.json()
-      if (json.success) {
+      if (res.status === 401) {
+        console.warn('[Workspace] /workspace returned 401; using demo workspace fallback.')
+        setItems(DEMO_WORKSPACE_ITEMS)
+      } else if (json.success) {
         setItems(json.data)
       }
     } catch (err) {

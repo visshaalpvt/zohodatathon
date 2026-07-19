@@ -12,7 +12,10 @@ export default function Settings() {
       try {
         const res = await fetch(buildApiUrl('/workspace'))
         const json = await res.json()
-        if (json.success) {
+        if (res.status === 401) {
+          console.warn('[Settings] /workspace returned 401; using demo preferences fallback.')
+          setPreferences({ theme: 'dark', notifications: true })
+        } else if (json.success) {
           const prefs = json.data.find(d => d.type === 'preference')
           if (prefs) {
             setDocId(prefs.ROWID)

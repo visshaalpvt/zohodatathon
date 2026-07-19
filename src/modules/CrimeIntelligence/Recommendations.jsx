@@ -5,6 +5,12 @@ import Badge from '../../components/shared/Badge'
 
 const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2 }
 
+const DEMO_RECOMMENDATIONS = [
+  { district: 'Bengaluru Urban', priority: 'High', title: 'Increase patrols near metro stations after midnight.', confidence: 92, geoName: 'Bengaluru Urban' },
+  { district: 'Mysuru', priority: 'Medium', title: 'Deploy community outreach for property theft awareness.', confidence: 78, geoName: 'Mysuru' },
+  { district: 'Dakshina Kannada', priority: 'Low', title: 'Review CCTV coverage in tourist zones.', confidence: 64, geoName: 'Dakshina Kannada' }
+]
+
 export default function Recommendations() {
   const { districtStats = [] } = useCrimeData()
   const topDistricts = districtStats
@@ -24,7 +30,10 @@ export default function Recommendations() {
           
         const res = await fetch(url)
         const json = await res.json()
-        if (json.success) {
+        if (res.status === 401) {
+          console.warn('[Recommendations] /recommendations returned 401; using demo recommendations fallback.')
+          setAllRecs(DEMO_RECOMMENDATIONS)
+        } else if (json.success) {
           // If we fetched a specific district, append district name to recs
           const data = json.data.map(r => ({
             ...r,

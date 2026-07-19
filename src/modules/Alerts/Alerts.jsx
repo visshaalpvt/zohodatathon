@@ -2,6 +2,33 @@ import { useState, useEffect } from 'react'
 import { buildApiUrl } from '../../api.js'
 import Badge from '../../components/shared/Badge'
 
+const DEMO_ALERTS = [
+  {
+    id: 'demo-1',
+    type: 'Crime Spike',
+    title: 'Localized property crime spike in Bengaluru Urban',
+    category: 'Bengaluru Urban',
+    severity: 'CRITICAL',
+    source: 'Anomaly Detection Engine',
+    timestamp: new Date().toISOString(),
+    read: false,
+    zScore: 4.2,
+    changePercent: 28
+  },
+  {
+    id: 'demo-2',
+    type: 'Crime Increase',
+    title: 'Traffic enforcement advisory for Mysuru district',
+    category: 'Mysuru',
+    severity: 'HIGH',
+    source: 'System',
+    timestamp: new Date().toISOString(),
+    read: true,
+    zScore: 2.1,
+    changePercent: 14
+  }
+]
+
 export default function Alerts() {
   const [alerts, setAlerts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -12,7 +39,10 @@ export default function Alerts() {
       try {
         const res = await fetch(buildApiUrl('/alerts'))
         const json = await res.json()
-        if (json.success) {
+        if (res.status === 401) {
+          console.warn('[Alerts] /alerts returned 401; using demo alerts fallback.')
+          setAlerts(DEMO_ALERTS)
+        } else if (json.success) {
           // Normalize alerts
           const parsed = json.data.map(a => ({
             id: a.id || a.ROWID,

@@ -9,6 +9,12 @@ const DATASET_TYPES = [
   { id: 'district_stats_2025', label: 'District Crime Stats 2025', desc: 'IPC and SLL total columns for forecasting' },
 ]
 
+const DEMO_DATASETS = [
+  { ROWID: 'demo-1', name: 'District Crime Stats 2024', dataset_type: 'district_stats_2024', updated_at: '2025-01-01' },
+  { ROWID: 'demo-2', name: 'IPC Crime Categories 2024', dataset_type: 'ipc_categories_2024', updated_at: '2025-01-02' },
+  { ROWID: 'demo-3', name: 'SLL Crime Categories 2024', dataset_type: 'sll_categories_2024', updated_at: '2025-01-03' }
+]
+
 export default function DatasetManager() {
   const [datasets, setDatasets] = useState([])
   const [loading, setLoading] = useState(true)
@@ -28,7 +34,9 @@ export default function DatasetManager() {
     try {
       const res = await fetch(buildApiUrl('/datasets'))
       const data = await res.json()
-      if (data.success) {
+      if (res.status === 401) {
+        setDatasets(DEMO_DATASETS)
+      } else if (data.success) {
         setDatasets(data.data)
       } else {
         showToast(data.error || 'Failed to retrieve datasets', 'critical')

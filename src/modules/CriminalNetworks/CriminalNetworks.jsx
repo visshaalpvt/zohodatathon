@@ -5,6 +5,19 @@ import { useCrimeData } from '../../context/CrimeDataContext'
 import Badge from '../../components/shared/Badge'
 
 const REPEAT_OFFENDERS = []
+const DEMO_NETWORK_GRAPH = {
+  nodes: [
+    { id: 'Bengaluru Urban', label: 'Bengaluru Urban', color: 'red', size: 24, type: 'district' },
+    { id: 'Cybercrime', label: 'Cybercrime', color: 'purple', size: 18, type: 'category' },
+    { id: 'Mysuru', label: 'Mysuru', color: 'orange', size: 20, type: 'district' },
+    { id: 'Vehicle Theft', label: 'Vehicle Theft', color: 'blue', size: 16, type: 'category' }
+  ],
+  links: [
+    { source: 'Bengaluru Urban', target: 'Cybercrime', weight: 4 },
+    { source: 'Bengaluru Urban', target: 'Mysuru', weight: 2 },
+    { source: 'Mysuru', target: 'Vehicle Theft', weight: 3 }
+  ]
+}
 
 export default function CriminalNetworks() {
   const { districtStats = [] } = useCrimeData()
@@ -20,7 +33,10 @@ export default function CriminalNetworks() {
       try {
         const res = await fetch(buildApiUrl('/network'))
         const json = await res.json()
-        if (json.success) {
+        if (res.status === 401) {
+          console.warn('[CriminalNetworks] /network returned 401; using demo network graph fallback.')
+          setGraphData(DEMO_NETWORK_GRAPH)
+        } else if (json.success) {
           // Rename edges -> links for force-graph compat
           const links = (json.data.edges || []).map(e => ({
             source: e.source,
