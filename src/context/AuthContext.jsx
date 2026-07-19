@@ -101,32 +101,50 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     console.log('[AuthContext] APP START - AUTH CHECK')
     
-    // Safety timeout: force loading=false after 5 seconds to prevent permanent "Authenticating..." spinner
-    const timer = setTimeout(() => {
-      console.warn('[AuthContext] Safety timeout triggered. Forcing authentication loading state to false.');
-      setLoading(false);
-    }, 5000);
+    // Global safety timeout: force loading=false after 6 seconds to prevent permanent "Authenticating..." spinner
+    // Also track whether a native SDK session was observed before the timeout so we can trust it as a fallback.
+    let nativeSessionObserved = false
+    let nativeUserCandidate = null
+    const globalTimer = setTimeout(() => {
+      console.warn('[AuthContext] Global auth safety timeout triggered. Forcing authentication loading state to false.');
+      // If native SDK already reported a session earlier, trust a minimal native user; otherwise fall back to Login view.
+      if (nativeSessionObserved && nativeUserCandidate) {
+        setUser(nativeUserCandidate)
+      }
+      setLoading(false)
+    }, 6000)
 
     const onAuthChecked = () => {
-      clearTimeout(timer);
-    };
-
-    if (window.catalyst && window.catalyst.auth) {
-      window.catalyst.auth.isUserAuthenticated()
-        .then(userResponse => {
-          console.log('[AuthContext] Catalyst SDK: Active session verified natively.');
-          fetchSession().then(onAuthChecked).catch(onAuthChecked);
-        })
-        .catch(err => {
-          console.log('[AuthContext] Catalyst SDK: No active native session detected. Falling back to backend.');
-          fetchSession().then(onAuthChecked).catch(onAuthChecked);
-        })
-    } else {
-      console.log('[AuthContext] Catalyst SDK not ready, falling back to /me fetch')
-      fetchSession().then(onAuthChecked).catch(onAuthChecked);
+      clearTimeout(globalTimer)
     }
 
-    return () => clearTimeout(timer);
+    if (window.catalyst && window.catalyst.auth) {
+      // Do a best-effort native pre-check but don't block on it.
+      try {
+        window.catalyst.auth.isUserAuthenticated()
+          .then(userResponse => {
+            if (userResponse) {
+              nativeSessionObserved = true
+              nativeUserCandidate = { authenticated: true, source: 'native' }
+            }
+            console.log('[AuthContext] Catalyst SDK: native isUserAuthenticated resolved. Proceeding to backend /me.');
+            fetchSession().then(onAuthChecked).catch(onAuthChecked)
+          })
+          .catch(err => {
+            console.log('[AuthContext] Catalyst SDK: native isUserAuthenticated rejected. Falling back to backend.');
+            fetchSession().then(onAuthChecked).catch(onAuthChecked)
+          })
+      } catch (err) {
+        // Defensive: if the SDK call itself throws synchronously, fall back to backend
+        console.warn('[AuthContext] Catalyst SDK check threw synchronously, falling back to backend.', err)
+        fetchSession().then(onAuthChecked).catch(onAuthChecked)
+      }
+    } else {
+      console.log('[AuthContext] Catalyst SDK not ready, falling back to /me fetch')
+      fetchSession().then(onAuthChecked).catch(onAuthChecked)
+    }
+
+    return () => clearTimeout(globalTimer)
   }, [])
 
   const logout = async () => {
