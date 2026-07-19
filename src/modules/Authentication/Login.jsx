@@ -1,5 +1,17 @@
 import { useEffect, useRef } from 'react'
 
+const getWidgetInitGuard = () => {
+  if (typeof window === 'undefined') {
+    return { initialized: false }
+  }
+
+  if (!window.__crimevisionAuthWidgetInitGuard) {
+    window.__crimevisionAuthWidgetInitGuard = { initialized: false }
+  }
+
+  return window.__crimevisionAuthWidgetInitGuard
+}
+
 export default function Login() {
   const initAttemptedRef = useRef(false)
 
@@ -13,16 +25,13 @@ export default function Login() {
     let isCancelled = false
 
     const initializeAuthWidget = async () => {
-      const now = Date.now()
-      const lastAttempt = Number(window.sessionStorage.getItem('crimevision-auth-widget-last-attempt') || '0')
-      const cooldownMs = 4000
-
-      if (initAttemptedRef.current && now - lastAttempt < cooldownMs) {
+      const guard = getWidgetInitGuard()
+      if (guard.initialized || initAttemptedRef.current) {
         return
       }
 
       initAttemptedRef.current = true
-      window.sessionStorage.setItem('crimevision-auth-widget-last-attempt', String(now))
+      guard.initialized = true
 
       const url = new URL(window.location.href)
       const hasAuthCallback = url.searchParams.has('code') || url.searchParams.has('state') || url.hash.includes('auth')
@@ -83,7 +92,7 @@ export default function Login() {
         }
       `;
 
-      // Mount the official widget once per auth cycle
+      // Mount the official widget once per full page load, even if the component remounts
       auth.signIn('catalyst-login-container', { css: customCss })
     }
 
