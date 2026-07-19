@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { buildApiUrl } from '../../api.js'
 
 const ADMIN_TABS = [
   { id: 'users',       label: 'Users',            icon: '👤' },

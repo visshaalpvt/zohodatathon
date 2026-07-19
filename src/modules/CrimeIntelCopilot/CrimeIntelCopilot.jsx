@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { buildApiUrl } from '../../api.js'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import ExplainableAI from '../../components/shared/ExplainableAI'
 

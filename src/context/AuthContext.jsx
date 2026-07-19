@@ -10,6 +10,44 @@ export function AuthProvider({ children }) {
 
   const clearError = () => setError(null)
 
+  const fetchNativeSessionUser = async () => {
+    if (!window.catalyst || !window.catalyst.auth) {
+      setUser(null)
+      return
+    }
+
+    try {
+      const nativeSession = await window.catalyst.auth.isUserAuthenticated()
+      if (!nativeSession) {
+        setUser(null)
+        return
+      }
+
+      console.warn('[AuthContext] Desync detected: Native SDK has session, but backend `/me` failed. Trusting native session and keeping user signed in.');
+      let nativeUser = { authenticated: true, source: 'native' }
+
+      if (typeof window.catalyst.auth.getCurrentProjectUser === 'function') {
+        try {
+          const result = await window.catalyst.auth.getCurrentProjectUser()
+          nativeUser = result || nativeUser
+        } catch (err) {
+          console.warn('[AuthContext] Failed to fetch native project user details:', err)
+        }
+      } else if (typeof window.catalyst.auth.getCurrentUser === 'function') {
+        try {
+          const result = await window.catalyst.auth.getCurrentUser()
+          nativeUser = result || nativeUser
+        } catch (err) {
+          console.warn('[AuthContext] Failed to fetch native user details:', err)
+        }
+      }
+
+      setUser(nativeUser)
+    } catch {
+      setUser(null)
+    }
+  }
+
   const fetchSession = async () => {
     console.log('[AuthContext] FETCH /me initiated')
     try {

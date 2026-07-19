@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { buildApiUrl } from '../../api.js'
 
 export default function Settings() {
   const [preferences, setPreferences] = useState({ theme: 'dark', notifications: true })

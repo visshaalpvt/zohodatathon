@@ -51,11 +51,25 @@ app.set('trust proxy', true);
 app.use(helmet({ contentSecurityPolicy: false }));
 
 // ─── CORS Configuration (BUG-004) ────────────────────────────────────────────
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:3000'
+];
+
 const corsOptions = {
-  origin: [
-    'https://zohodatathon-voasiiql.onslate.in',
-    'http://localhost:5173'
-  ],
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin) || /^https:\/\/[a-z0-9-]+\.onslate\.in$/i.test(origin)) {
+      return callback(null, true);
+    }
+
+    callback(null, false);
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: [
     "Content-Type",

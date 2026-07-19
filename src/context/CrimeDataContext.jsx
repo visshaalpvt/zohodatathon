@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './AuthContext'
+import { buildApiUrl } from '../api.js'
 
 const CrimeDataContext = createContext(null)
 

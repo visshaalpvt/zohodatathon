@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { buildApiUrl } from '../../api.js'
 import Badge from '../../components/shared/Badge'
 
 export default function Alerts() {

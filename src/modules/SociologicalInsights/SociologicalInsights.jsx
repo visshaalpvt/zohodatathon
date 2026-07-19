@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { buildApiUrl } from '../../api.js'
 import { useCrimeData } from '../../context/CrimeDataContext'
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Badge from '../../components/shared/Badge'
