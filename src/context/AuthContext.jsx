@@ -24,11 +24,30 @@ export function AuthProvider({ children }) {
         console.log('[AuthContext] SESSION NOT FOUND via /me')
         setUser(null)
         // When backend /me is empty but native Catalyst SDK reports an active session,
-        // trust the native session for the demo and do not force a logout.
+        // trust the native session for the demo and set a minimal authenticated user.
         if (window.catalyst && window.catalyst.auth) {
           window.catalyst.auth.isUserAuthenticated()
-            .then(() => {
+            .then(async () => {
               console.warn('[AuthContext] Desync detected: Native SDK has session, but backend `/me` is empty. Trusting native session and keeping user signed in.');
+              let nativeUser = { authenticated: true, source: 'native' }
+
+              if (typeof window.catalyst.auth.getCurrentProjectUser === 'function') {
+                try {
+                  const result = await window.catalyst.auth.getCurrentProjectUser()
+                  nativeUser = result || nativeUser
+                } catch (err) {
+                  console.warn('[AuthContext] Failed to fetch native project user details:', err)
+                }
+              } else if (typeof window.catalyst.auth.getCurrentUser === 'function') {
+                try {
+                  const result = await window.catalyst.auth.getCurrentUser()
+                  nativeUser = result || nativeUser
+                } catch (err) {
+                  console.warn('[AuthContext] Failed to fetch native user details:', err)
+                }
+              }
+
+              setUser(nativeUser)
             })
             .catch(() => {});
         }
