@@ -44,12 +44,27 @@ const DEMO_DASHBOARD_FALLBACK = {
   lastUpdated: new Date().toISOString()
 }
 
+const EMPTY_COMPILED_FALLBACK = {
+  districtStats: [],
+  forecasts: [],
+  hotspots: [],
+  monthlyReview: [],
+  ipcCategories: { grandTotal: 0, categories: [] },
+  allCategories: [],
+  district2025Data: [],
+  geoStats: {},
+  topDistricts: [],
+  anomalies: [],
+  recommendations: []
+}
+
 export function CrimeDataProvider({ children }) {
   const { user, loading: authLoading } = useAuth()
   const [data, setData] = useState(null)
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [recoverableError, setRecoverableError] = useState(false)
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -60,29 +75,48 @@ export function CrimeDataProvider({ children }) {
     console.log('[CrimeDataContext] FETCH /dashboard and /compiled initiated')
     setLoading(true)
     setError(null)
+    setRecoverableError(false)
     try {
       const [resCompiled, resDash] = await Promise.all([
         fetchWithTimeout(buildApiUrl('/datasets/compiled'), { credentials: 'include' }, 5000),
         fetchWithTimeout(buildApiUrl('/dashboard'), { credentials: 'include' }, 5000)
       ])
       
-      const jsonCompiled = await resCompiled.json()
-      let jsonDash = await resDash.json()
+      let jsonCompiled = null
+      let jsonDash = null
+      let isRecoverable = false
 
-      if (!resCompiled.ok || !jsonCompiled.success) {
+      if (resCompiled.status === 401) {
+        isRecoverable = true
+        console.warn('[CrimeDataContext] /datasets/compiled returned 401; using empty compiled fallback for presentation.')
+        jsonCompiled = { success: true, data: EMPTY_COMPILED_FALLBACK }
+      } else {
+        jsonCompiled = await resCompiled.json()
+      }
+
+      if (resCompiled.status !== 401 && (!resCompiled.ok || !jsonCompiled.success)) {
         throw new Error(jsonCompiled.error || 'Failed to load compiled analytics')
       }
 
       if (resDash.status === 401) {
+        isRecoverable = true
         console.warn('[CrimeDataContext] /dashboard returned 401; using demo fallback dashboard data for presentation.')
         jsonDash = { success: true, data: DEMO_DASHBOARD_FALLBACK }
+      } else {
+        jsonDash = await resDash.json()
+      }
+
+      if (resDash.status !== 401 && (!resDash.ok || !jsonDash.success)) {
+        throw new Error(jsonDash.error || 'Failed to load dashboard data')
       }
       
-      setData(jsonCompiled.data)
+      setData(jsonCompiled.data ?? EMPTY_COMPILED_FALLBACK)
       setDashboardData(jsonDash.data || jsonDash)
+      setRecoverableError(isRecoverable)
     } catch (err) {
       console.error('[CrimeDataContext] Fetch error:', err)
       setError(err.message)
+      setRecoverableError(false)
     } finally {
       setLoading(false)
     }
@@ -135,6 +169,7 @@ export function CrimeDataProvider({ children }) {
     dashboardData,
     loading,
     error,
+    recoverableError,
     refreshData,
     shortName
   }

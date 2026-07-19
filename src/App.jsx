@@ -106,7 +106,8 @@ class AppErrorBoundary extends Component {
 
 export default function App() {
   const { user, loading: authLoading } = useAuth()
-  const { loading: dataLoading, error: dataError } = useCrimeData()
+  const { loading: dataLoading, error: dataError, recoverableError } = useCrimeData()
+  const isRecoverableDataError = recoverableError || (dataError && /authentication required|unauthorized|401/i.test(dataError))
 
   // Auth Loading Gate:
   if (authLoading) {
@@ -154,7 +155,7 @@ export default function App() {
       <div className="app-body">
         <LeftNav />
         <main className="content-area">
-          {dataError ? (
+          {!isRecoverableDataError && dataError ? (
             <ErrorFallback error={dataError} />
           ) : dataLoading ? (
             <LoadingFallback message="Initializing Enterprise Data Layer..." />
