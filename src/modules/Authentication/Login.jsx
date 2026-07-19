@@ -1,9 +1,51 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 export default function Login() {
+  const initAttemptedRef = useRef(false)
 
   useEffect(() => {
-    if (window.catalyst && window.catalyst.auth) {
+    const auth = window.catalyst?.auth
+    if (!auth) {
+      console.error('Catalyst SDK not loaded')
+      return
+    }
+
+    let isCancelled = false
+
+    const initializeAuthWidget = async () => {
+      const now = Date.now()
+      const lastAttempt = Number(window.sessionStorage.getItem('crimevision-auth-widget-last-attempt') || '0')
+      const cooldownMs = 4000
+
+      if (initAttemptedRef.current && now - lastAttempt < cooldownMs) {
+        return
+      }
+
+      initAttemptedRef.current = true
+      window.sessionStorage.setItem('crimevision-auth-widget-last-attempt', String(now))
+
+      const url = new URL(window.location.href)
+      const hasAuthCallback = url.searchParams.has('code') || url.searchParams.has('state') || url.hash.includes('auth')
+      if (hasAuthCallback) {
+        return
+      }
+
+      try {
+        const isAuthenticated = typeof auth.isUserAuthenticated === 'function'
+          ? await auth.isUserAuthenticated()
+          : false
+
+        if (isCancelled || isAuthenticated) {
+          return
+        }
+      } catch (error) {
+        console.warn('Catalyst auth state check failed:', error)
+      }
+
+      if (isCancelled) {
+        return
+      }
+
       // Inject dark enterprise styling into the Catalyst auth widget
       const customCss = `
         body {
@@ -41,12 +83,16 @@ export default function Login() {
         }
       `;
 
-      // Mount the official widget
-      window.catalyst.auth.signIn("catalyst-login-container", { css: customCss });
-    } else {
-      console.error("Catalyst SDK not loaded");
+      // Mount the official widget once per auth cycle
+      auth.signIn('catalyst-login-container', { css: customCss })
     }
-  }, []);
+
+    initializeAuthWidget()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
   return (
     <div className="app-shell" style={{ justifyContent: 'center', alignItems: 'center' }}>

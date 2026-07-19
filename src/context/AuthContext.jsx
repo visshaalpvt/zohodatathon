@@ -25,8 +25,20 @@ export function AuthProvider({ children }) {
       const res = await fetch(buildApiUrl('/me'), {
         credentials: 'include'
       })
-      const data = await res.json()
-      if (data.success && data.data) {
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          console.warn('[AuthContext] Session not found or unauthorized')
+          setUser(null)
+          return
+        }
+        throw new Error(`Auth check failed with status ${res.status}`)
+      }
+
+      const contentType = res.headers.get('content-type') || ''
+      const data = contentType.includes('application/json') ? await res.json() : null
+
+      if (data?.success && data?.data) {
         console.log('[AuthContext] SESSION FOUND:', data.data.email)
         setUser(data.data)
       } else {
@@ -35,6 +47,19 @@ export function AuthProvider({ children }) {
       }
     } catch (err) {
       console.error('[AuthContext] Auth check failed:', err)
+
+      if (window.catalyst?.auth?.isUserAuthenticated) {
+        try {
+          const isAuthenticated = await window.catalyst.auth.isUserAuthenticated()
+          if (isAuthenticated) {
+            console.warn('[AuthContext] Catalyst reports an authenticated user; holding the login screen until the session is confirmed')
+            return
+          }
+        } catch (sdkErr) {
+          console.warn('[AuthContext] Catalyst auth state check failed:', sdkErr)
+        }
+      }
+
       setUser(null)
     }
   }
