@@ -1,128 +1,49 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { buildApiUrl } from '../api.js'
+import { createContext, useContext, useState } from 'react'
 
 const AuthContext = createContext(null)
-let authProviderRenderCount = 0
+
+const DEMO_USER = {
+  name: 'Demo Officer',
+  role: 'Administrator',
+  authenticated: true,
+}
+
+function getStoredDemoUser() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  return window.localStorage.getItem('demo_authenticated') === 'true' ? { ...DEMO_USER } : null
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(() => getStoredDemoUser())
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-
-  authProviderRenderCount += 1
-  console.log('[AuthContext] PROVIDER RENDER', {
-    renderCount: authProviderRenderCount,
-    user,
-    loading,
-    error,
-  })
 
   const clearError = () => setError(null)
 
-  const fetchSession = async () => {
-    console.log('[AuthContext] FETCH /me initiated')
-    try {
-      const res = await fetch(buildApiUrl('/me'), {
-        credentials: 'include'
-      })
+  const login = () => {
+    const nextUser = { ...DEMO_USER }
+    setUser(nextUser)
+    setError(null)
 
-      if (!res.ok) {
-        if (res.status === 401 || res.status === 403) {
-          console.warn('[AuthContext] Session not found or unauthorized')
-          setUser(null)
-          return
-        }
-        throw new Error(`Auth check failed with status ${res.status}`)
-      }
-
-      const contentType = res.headers.get('content-type') || ''
-      const data = contentType.includes('application/json') ? await res.json() : null
-
-      if (data?.success && data?.data) {
-        console.log('[AuthContext] SESSION FOUND:', data.data.email)
-        setUser(data.data)
-      } else {
-        console.log('[AuthContext] SESSION NOT FOUND via /me')
-        setUser(null)
-      }
-    } catch (err) {
-      console.error('[AuthContext] Auth check failed:', err)
-
-      if (window.catalyst?.auth?.isUserAuthenticated) {
-        try {
-          const isAuthenticated = await window.catalyst.auth.isUserAuthenticated()
-          if (isAuthenticated) {
-            console.warn('[AuthContext] Catalyst reports an authenticated user; holding the login screen until the session is confirmed')
-            return
-          }
-        } catch (sdkErr) {
-          console.warn('[AuthContext] Catalyst auth state check failed:', sdkErr)
-        }
-      }
-
-      setUser(null)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('demo_authenticated', 'true')
     }
   }
 
-  useEffect(() => {
-    console.log('[AuthContext] APP START - AUTH CHECK')
+  const logout = () => {
+    setUser(null)
+    setError(null)
 
-    let isMounted = true
-    let settled = false
-    const globalTimer = window.setTimeout(() => {
-      console.warn('[AuthContext] Global auth safety timeout triggered. Forcing authentication loading state to false.')
-      if (!settled && isMounted) {
-        settled = true
-        setLoading(false)
-      }
-    }, 6000)
-
-    const finishAuth = () => {
-      if (settled || !isMounted) {
-        return
-      }
-
-      settled = true
-      clearTimeout(globalTimer)
-      setLoading(false)
-    }
-
-    const runAuthCheck = async () => {
-      try {
-        await fetchSession()
-      } catch (err) {
-        console.error('[AuthContext] Initial auth check failed:', err)
-      } finally {
-        finishAuth()
-      }
-    }
-
-    runAuthCheck()
-
-    return () => {
-      isMounted = false
-      settled = true
-      clearTimeout(globalTimer)
-    }
-  }, [])
-
-  const logout = async () => {
-    try {
-      if (window.catalyst && window.catalyst.auth) {
-        await window.catalyst.auth.signOut()
-      } else {
-        window.location.href = '/__catalyst/auth/logout'
-      }
-    } catch (err) {
-      console.error("Logout failed:", err)
-      window.location.href = '/__catalyst/auth/logout'
-    } finally {
-      setUser(null)
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('demo_authenticated')
     }
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, clearError, fetchSession, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, clearError, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
